@@ -1,0 +1,112 @@
+/* Overall layout of the page */
+
+body {
+  font-family: sans-serif;
+  font-size: 12pt;
+  color: #555555;
+  background-color: #E0E0E0;
+  padding:20px 0px 0px 0px; 
+}
+
+/* Layout of the non-modal window that gives text feedback */
+
+.messagepop {
+  width: 295px;
+  min-height: 93px;
+  background-color: #f1f1f2;
+  border: 2px solid #BBBBBB;
+  display: none;
+  text-align: left;
+  z-index: 50;
+  position: absolute;
+  margin: -25px 0px 0px -11px;
+  box-shadow: 0 6px 6px -5px #acacac;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  padding: 10px 10px 10px 10px;
+}
+
+.messagepop:before {
+  /* Adds the triangle to the popup bubble */
+  content: "";
+  width: 0;
+  height: 0;
+  right: 100%;
+  top: 109px;
+  position: absolute;
+  border-top: 7px solid transparent;
+  border-right: 14px solid #BBBBBB;
+  border-bottom: 7px solid transparent;
+}
+
+/* Colors */
+
+.headerText {
+  color: black;
+}
+
+a.selected {
+  background-color: #1F75CC;
+  color: red;
+  z-index: 100;
+}
+
+.blue {
+  background-color: #2773BD;
+}
+
+.gradientColor {
+  /* Fallback for browsers that do not support gradients */
+  background: #d9a931;
+  background: -webkit-linear-gradient(bottom, #7a1f1f, #990000);
+  background: -o-linear-gradient(top, #7a1f1f, #990000);
+  background: -moz-linear-gradient(top, #7a1f1f, #990000);
+  background: linear-gradient(to top, #7a1f1f, #990000);
+}
+.portalToGenericAdviceModalColor {
+  color: rgb(48, 155, 242);
+}
+
+.portalToGenericAdviceModalColor:hover {
+  color: #0066CC;
+}
+
+.errorMessageColor {
+  color: red;
+}
+
+.fixedPWColor {
+  color: black;
+}
+
+.deltaHighlights {
+  /* Colors changes from the original password in concrete suggestion */
+  color: #FF00FF;
+}
+
+.modalTipTextColor {
+  color: #898989;
+}
+
+.explainWhyColoring {
+  /* Styling of (Why?) links next to text feedback */
+  color: rgb(48, 155, 242);
+  font-size: 9pt;
+}
+
+.explainWhyColoring:hover {
+  color: #0066CC;
+}
+
+.buttonColoring {
+  font-size: 10pt;
+  background-image: -webkit-linear-gradient(top, #579add, #2773bd);
+  background-image: -moz-linear-gradient(top, #579add, #2773bd);
+  background-image: -ms-linear-gradient(top, #579add, #2773bd);
+  background-image: -o-linear-gradient(top, #579add, #2773bd);
+  background-image: linear-gradient(to bottom, #579add, #2773bd);
+  color: white;
+  border: 1px #015E93;
+  border-radius: 7px;
+}

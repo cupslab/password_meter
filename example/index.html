@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+
+<link href="bootstrap.min.css" rel="stylesheet" type="text/css" />
+<link href="config.css" rel="stylesheet" type="text/css" />
+<link href="static.css" rel="stylesheet" type="text/css" />
+<!-- Load JQuery and Bootstrap. (Can omit if already loaded on the page.) -->
+<script src="jquery-2.2.4.min.js"></script>
+<script src="bootstrap.min.js"></script>
+<script src="lz-string.js"></script> <!-- LZW decompression for dictionaries -->
+
+<!-- nn-client depends on Function.prototype.bind, so provide if necessary -->
+<script>
+if (!Function.prototype.bind) {
+  Function.prototype.bind = function(oThis) {
+    if (typeof this !== 'function') {
+      // closest thing possible to the ECMAScript 5
+      // internal IsCallable function
+      throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
+    }
+
+    var aArgs   = Array.prototype.slice.call(arguments, 1),
+        fToBind = this,
+        fNOP    = function() {},
+        fBound  = function() {
+          return fToBind.apply(this instanceof fNOP
+                 ? this
+                 : oThis,
+                 aArgs.concat(Array.prototype.slice.call(arguments)));
+        };
+
+    if (this.prototype) {
+      // Function.prototype doesn't have a prototype property
+      fNOP.prototype = this.prototype; 
+    }
+    fBound.prototype = new fNOP();
+
+    return fBound;
+  };
+}
+</script>
+<script src="nn-client.min.js"></script> <!-- Neural networks; this file loads others -->
+
+<script>
+// this defines a policy for 8 character minimum passwords
+var passwordMeterConfig = {
+    colors: { // display colors
+        compliant: "#006600", // by default show completed requirement in green
+        noncompliant: "#660000", // by default show outstanding requirement in red
+    },
+    symbols: { // display symbols
+        compliant: "&#x2714; ", // HEAVY CHECK MARK
+        noncompliant: "&#x2751; ", // LOWER RIGHT SHADOWED WHITE SQUARE
+    },
+    remindAgainstReuse: true, // true to emphasize *not* reusing passwords
+    ignoredWords: // list of words that should count for nothing in the password
+        ["pittsburgh",
+        "steelers", "stillers", "penguins", "pens", "pirates", "bucs", "carnegie", "mellon",
+        "university"],
+    forbiddenPasswords: // list of passwords that should be rejected
+         ["123456", "password", "12345", "12345678", "qwerty", "1234567890", "1234",
+         "baseball", "dragon", "football", "1234567", "monkey", "letmein", "abc123",
+         "111111", "mustang", "access", "shadow", "master", "michael", "superman",
+         "696969", "123123", "batman", "trustno1"],
+    length: {
+        active: true,
+        minLength: 8,
+        maxLength: 0, // set to 0 if there is no maximum length
+    },
+    classCount: { // number of character classes
+        active: false,
+        minCount: 1, // classes are upper case, lower case, digits and symbols (others)
+        maxCount: 4,
+    },
+    classRequire: { // required character classes
+        active: false,
+        upperCase: false,
+        lowerCase: true,
+        digits: true,
+        symbols: false,
+    },
+    classAllow: { // permitted character classes
+        active: false,
+        upperCase: true,
+        lowerCase: true,
+        digits: true,
+        symbols: true,
+    },
+    forbidPasswords: {
+        active: true,
+        includeLargerList: true, // setting this to true also blacklists tens of thousands
+        // of common passwords loaded for the common passwords dictionary check
+    },
+    forbidChars: {
+        active: false,
+        list: [],
+    },
+    repeatChars: {
+        active: false,
+        limit: 3, // prohibit a character being repeated N or more times consecutively
+    },
+    usernameDifference: {
+        active: true,
+        limit: 1, // prohibit passwords being N or fewer characters different than username
+    },
+    neuralNetworkConfig: {
+        intermediate: "basic_3M.info_and_guess_numbers.no_bloomfilter.json",
+        file: "basic_3M.weight_arch.quantized.fixed_point1000.zigzag.nospace.json",
+        zigzag: true,
+        scaleFactor: 300,
+    },
+
+};
+</script>
+<!-- Load external files needed for the meter to run -->
+<script src="PasswordMeter.js"></script>
+
+<script>
+// obtain handle to PasswordMeter UI
+var ui = PasswordMeter.getUI();
+</script>
+
+</head>
+
+<body style="bodyStyle">
+<div class="mainBox">
+    <!-- The main password-creation section -->
+    <div class="grad-maroon createPWHeader">
+        <p class="headerText" style="margin-bottom: 0;">Create Your Password</p>
+    </div>
+    <div class="passwordCreationSection">
+        <div class="pwfield" style="display:inline-block; text-align: center; margin-left: auto; margin-right: auto;">
+            <div id="meterfield" class="pwfield">
+                <div class="boxlabel">
+                    <div class="formInputBoxRow"><span class="">Username</span><span id="usernameTooShort" class="errorMessage errorMessageColor"> (Too short!)</span></div>
+                    <div class="formInputBoxRow">
+                        <input type="text" name="username" id="usernamebox" class="formInputBox" onkeyup="ui.continueCheck(false); ui.spawnRating();" />
+                    </div>
+                    <div class="formInputBoxRow"><span class="">&nbsp;</span></div>
+                    <div class="formInputBoxRow"><span class="">Password</span><span id="passwordNonCompliant" class="errorMessage errorMessageColor"> (Must meet requirements!)</span></div>
+                    <div class="formInputBoxRow">
+                        <input type="password" name="password" id="pwbox" class="formInputBox" onkeyup="ui.continueCheck(false); ui.mayberate();" />
+                    </div>
+                    <div class="formInputBoxRow">
+                        <div class="cups-passwordmeter cups-passwordmeter-basic">
+                            <span style="width: 0px;" id="cups-passwordmeter-span"></span>
+                        </div>
+                    </div>
+                    <div class="formInputBoxRow">
+                        <div class="showHideSection"><span>Show Password</span><span class="detailedFeedback"> &amp; Detailed Feedback</span> <span class="checkboxRequiringLabel"><input type="checkbox" id="showHidePWNonModal" class="showHideCheckbox" onclick="ui.toggleShowHideNonModal();" /></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+	<!-- The non-modal window where text feedback appears -->
+        <div style="float:left; width:230px; padding:0px;">&nbsp;
+            <br />
+            <div id="messagepop" class="messagepop pop">
+                <p style="margin:0 0 -5px 0; font-size: 12pt; font-weight: bold; margin-bottom: 10px;"> <span id="feedbackHeaderText">Improve your password</span></p>
+                <table id="nonmodalFeedbackTable" class="nonmodalTable">
+                    <tr id="nonmodalRow1" class="nonmodalRow">
+                        <td id="tipColor1" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText1" class="nonmodalTextCell">
+                            <p id="tipText1" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                    <tr id="nonmodalRow2" class="nonmodalRow">
+                        <td id="tipColor2" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText2" class="nonmodalTextCell">
+                            <p id="tipText2" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                    <tr id="nonmodalRow3" class="nonmodalRow">
+                        <td id="tipColor3" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText3" class="nonmodalTextCell">
+                            <p id="tipText3" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                    <tr id="nonmodalRow4" class="nonmodalRow">
+                        <td id="tipColor4" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText4" class="nonmodalTextCell">
+                            <p id="tipText4" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                    <tr id="nonmodalRow5" class="nonmodalRow">
+                        <td id="tipColor5" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText5" class="nonmodalTextCell">
+                            <p id="tipText5" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                    <tr id="nonmodalRow6" class="nonmodalRow">
+                        <td id="tipColor6" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText6" class="nonmodalTextCell">
+                            <p id="tipText6" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                    <tr id="nonmodalRow7" class="nonmodalRow">
+                        <td id="tipColor7" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText7" class="nonmodalTextCell">
+                            <p id="tipText7" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                    <tr id="nonmodalRow8" class="nonmodalRow">
+                        <td id="tipColor8" class="nonmodalColorCell">
+                            <div class="coloredSpacer blue"></div>
+                        </td>
+                        <td id="tipText8" class="nonmodalTextCell">
+                            <p id="tipText8" class="tipText"></p>
+                        </td>
+                        <td class="nonmodalTextCell explainWhy explainWhyColoring" onclick="ui.showModal();" data-target="#myModal">(Why?)</td>
+                    </tr>
+                </table>
+                <div class="recommended fixedPWavailablePortal" style="display: none;">
+                    <button type="button" class="buttonLayout buttonColoring" onclick="$('#showHidePWNonModal').prop('checked',true);ui.toggleShowHideNonModal();">See Your Password<br />With Our Improvements</button>
+                </div>
+                <div id="nonmodalConcreteSuggestion" class="recommended concreteSuggestionDiv" style="display: none;"><span class="betterChoice">A better choice: </span><span id="nonmodalFixedPW" class="fixedPW fixedPWColor" onclick="ui.fixPWNonModal();"></span></div>
+                <div class="portalToGenericAdviceModal portalToGenericAdviceModalColor" style="display:none" onclick="$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);" data-target="#myModalGeneric">How to make strong passwords</div>
+            </div>
+        </div>
+        <div style="float:left; margin:0px; padding:0px; width: 100%; height:10px;">&nbsp;</div>
+        <div id="confirmpw" class="pwfield" style="display: none;">
+            <div class="boxlabel"><span class="">Confirm Password</span><span id="confirmDoesNotMatch" class="errorMessage errorMessageColor"> (Doesn't match!)</span><br /></div>
+            <input type="password" name="confirmpassword" id="confirmbox" class="formInputBox" onkeyup="$('#showHidePWNonModal').prop('checked',false);ui.toggleShowHideNonModal();ui.continueCheck(false);" />
+            <br />
+        </div>
+        <div style="float:left; margin:0px; padding:0; width: 100%; height:50px;">&nbsp;
+            <div style="float: left; margin:0; padding:0px; width: 200px; display:inline-block">&nbsp;</div>
+            <button type="button" id="continueButton" class="buttonLayout buttonColoring" style="margin:10px 0 0 41px;" onclick="ui.continueCheck(true);">Continue</button>
+        </div>
+    </div>
+
+    <!-- Specific-advice modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modalHeader grad-maroon">
+                <button type="button" class="close tipclose" data-dismiss="modal" aria-label="Close" style="padding: 8px 10px 0 0;"><span aria-hidden="true">&times;</span></button>
+                <h5 class="modalHeaderText headerText">Ways to Improve Your Password</h5>
+            </div>
+            <div class="modal-body">
+                <div id="modal-top-password" class="pwfieldModal">
+                    <div class="formInputBoxRow formInputBoxRowModal">
+                        <input type="password" name="pw" id="pwboxModal" class="formInputBox" onkeyup="ui.spawnRating(); ui.enableDiscard();"/>
+                    </div>
+                    <div class="formInputBoxRow formInputBoxRowModal cups-passwordmeter cups-passwordmeter-modal" style="display:inline-block; text-align: center;  padding:0px; margin:0px;">
+                        <span id="cups-passwordmeter-span-modal"></span>
+                    </div>
+                </div>
+                <div class="showHideSection">
+                    <span>Show Password</span><span class="detailedFeedback"> &amp; Detailed Feedback</span> <span class="checkboxRequiringLabel"><input type="checkbox" id="showHidePWModal" class="showHideCheckbox" onclick="ui.toggleShowHideModal();" /></span>
+                </div>
+                <div class="recommended fixedPWavailablePortal" style="display: none;">
+                    <button type="button" class="buttonLayout buttonColoring" onclick="$('#showHidePWModal').prop('checked',true); ui.toggleShowHideModal();">See Your Password With Our Improvements</button>
+                </div>
+                <div id="modalConcreteSuggestion" class="recommended concreteSuggestionDiv" style="display: none;">
+                    <span class="betterChoice">A better choice: </span><span id="modalFixedPW" class="fixedPW fixedPWColor" onclick="ui.fixPWModal();"></span>
+                </div>
+                <div id="feedbackHeaderTextModal" class="strategyHeading">Tips to make a stronger password:</div>
+                <table id="modalFeedbackTable" class="modalTable">
+                    <tr id="modalRow1" class="modalRow">
+                        <td class="modalColorCell"><div class="coloredSpacer blue"></div></td>
+                        <td id="tip1" class="modalTextCell"><p id="suggestion1" class="suggestionText"></p></td>
+                    </tr>
+                    <tr id="modalRow1a" class="modalRow">
+                        <td class="modalColorCellSpacer"></td>
+                        <td id="tipCell1"><p id="sensText1" class="modalTipText modalTipTextColor"></p></td>
+                    </tr>
+                    <tr id="modalRow2" class="modalRow">
+                        <td class="modalColorCell"><div id="modalBar2" class="coloredSpacer blue"></div></td>
+                        <td id="tip2" class="modalTextCell"><p id="suggestion2" class="suggestionText"></p></td>
+                    </tr>
+                    <tr id="modalRow2a" class="modalRow">
+                        <td class="modalColorCellSpacer"></td>
+                        <td id="tipCell2"><p id="sensText2" class="modalTipText modalTipTextColor"></p></td>
+                    </tr>
+                    <tr id="modalRow3" class="modalRow">
+                        <td class="modalColorCell"><div id="modalBar3" class="coloredSpacer blue"></div></td>
+                        <td id="tip3" class="modalTextCell"><p id="suggestion3" class="suggestionText"></p></td>
+                    </tr>
+                    <tr id="modalRow3a" class="modalRow">
+                        <td class="modalColorCellSpacer"></td>
+                        <td id="tipCell3"><p id="sensText3" class="modalTipText modalTipTextColor"></p></td>
+                    </tr>
+                    <tr id="modalRow4" class="modalRow">
+                        <td id="tip4" class="modalTextCell"><p id="suggestion4" class="suggestionText"></p></td>
+                    </tr>
+                    <tr id="modalRow5" class="modalRow">
+                        <td id="tip5" class="modalTextCell"><p id="suggestion5" class="suggestionText"></p></td>
+                    </tr>
+                    <tr id="modalRow6" class="modalRow">
+                        <td id="tip6" class="modalTextCell"><p id="suggestion6" class="suggestionText"></p></td>
+                    </tr>
+                    <tr id="modalRow7" class="modalRow">
+                        <td id="tip7" class="modalTextCell"><p id="suggestion7" class="suggestionText"></p></td>
+                    </tr>
+                    <tr id="modalRow8" class="modalRow">
+                        <td id="tip8" class="modalTextCell"><p id="suggestion8" class="suggestionText"></p></td>
+                    </tr>
+                </table>
+                <div class="portalToGenericAdviceModal portalToGenericAdviceModalColor" style="display:none" onclick="$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);" data-target="#myModalGeneric">How to make strong passwords</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="discardButton" class="buttonLayout buttonColoring" data-dismiss="modal" style="display: none; margin-right: 10px;" onClick="ui.discardpw();ui.spawnRating();">Cancel</button>
+                <button type="button" id="keepButton" class="buttonLayout buttonColoring" data-dismiss="modal" onclick="ui.keeppw();">Ok</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Generic-advice modal -->
+    <div class="modal fade" id="myModalGeneric" tabindex="-1" role="dialog" aria-labelledby="myModalLabelGeneric">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modalHeader grad-maroon">
+                    <button type="button" class="close tipclose" data-dismiss="modal" aria-label="Close" style="padding: 8px 10px 0 0;"><span aria-hidden="true">&times;</span></button>
+                    <h5 class="modalHeaderText headerText">Making a Strong Password</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="strategyHeading">Strategies for Making a Strong Password:</div>
+                    <table class="modalTable">
+                        <tr>
+                            <td class="modalColorCellGeneric"><div class="coloredSpacer blue"></div></td>
+                            <td id="tip1g" class="modalTextCell"><p id="suggestion1g" class="suggestionText">Do not reuse any of your existing passwords for any accounts you care about! Password reuse is very insecure! If it's too much to remember, write the passwords down in a secure place or use a password manager.</p></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td id="tipCell1g"><p id="sensText1g" class="modalTipText modalTipTextColor">Attackers commonly try to log into many different websites with the usernames and passwords they obtain from other sites' data breaches.</p></td>
+                        </tr>
+                        <tr>
+                            <td class="modalColorCellGeneric"><div id="modalBar2g" class="coloredSpacer blue"></div></td>
+                            <td id="tip2g" class="modalTextCell"><p id="suggestion2g" class="suggestionText">Make your password at least 12 characters, and consider including uppercase letters, digits, and/or symbols in unpredictable places.</p></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td id="tipCell2g"><p id="sensText2g" class="modalTipText modalTipTextColor">Attackers know that people often put numbers and symbols at the end of their password and uppercase letters at the beginning. Be different!</p></td>
+                        </tr>
+                        <tr>
+                            <td class="modalColorCellGeneric"><div id="modalBar3g" class="coloredSpacer blue"></div></td>
+                            <td id="tip3g" class="modalTextCell"><p id="suggestion3g" class="suggestionText">One way to make a strong password is to create a sentence that no one's ever said before and use the first letter or two of each word as your password, mixing in other types of characters.</p></td>
+                        </tr>
+                        <tr>
+                            <td class="modalColorCellGeneric"><div id="modalBar4g" class="coloredSpacer blue"></div></td>
+                            <td id="tip4g" class="modalTextCell"><p id="suggestion2g" class="suggestionText">Avoid basing your password around the names of people or pets, things you like (e.g., favorite songs, cars), sports, or birthdates.</p></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td id="tipCell4g"><p id="sensText4g" class="modalTipText modalTipTextColor">Many other people do the same, making it easy for attackers to guess.</p></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="okGeneric" class="buttonLayout buttonColoring" data-dismiss="modal">Ok</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
