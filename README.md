@@ -1,6 +1,6 @@
 # Password Meter
 
-This project implements a data-driven password meter. Its effects on password security and usability were evaluated in the following publication: Ur et al. "Design and Evaluation of a Data-Driven Password Meter." In the Proceedings of CHI, 2017.
+This project implements a data-driven password meter. Its effects on password security and usability were evaluated in the following publication: Ur et al. "Design and Evaluation of a Data-Driven Password Meter." In the Proceedings of CHI, 2017. http://www.blaseur.com/papers/CHI17meter.pdf
 
 The project is written in TypeScript, which transcompiles to JavaScript.
 
@@ -45,9 +45,9 @@ Finally, the neural network that estimates password strength needs to be trained
 
 To set up the meter, define the following global variables before referencing the PasswordMeter.js file:-
 
-$ for JQuery with Bootstrap
-LZString for LZString
-passwordMeterConfig for configuration (optional, will default to basic8 policy)
+  * $ for JQuery with Bootstrap
+  * LZString for LZString
+  * passwordMeterConfig for configuration (optional, will default to basic8 policy)
 
 
 ## Initial Project Contributors
