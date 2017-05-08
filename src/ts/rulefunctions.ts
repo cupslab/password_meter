@@ -284,11 +284,13 @@ export module RuleFunctions {
             // assuming we included the larger list, it's on that list (case-insensitive)
 
             // potentialTODO use Array.contains? no strictness.
-            if (forbiddenPasswords.indexOf(pw.toLowerCase()) !== -1) {
+            if (pw.length === 0 || forbiddenPasswords.indexOf(pw.toLowerCase()) === -1) {
                 if (includelargerlist) {
-                    if (dictionaries.passwordsDict[pw.toLowerCase()] !== true) {
+                    if (pw.length === 0 || dictionaries.passwordsDict[pw.toLowerCase()] !== true) {
                         compliant = true;
                     }
+                } else {
+                    compliant = true;
                 }
             }
 
@@ -397,7 +399,7 @@ export module RuleFunctions {
                 pwcopy = pwcopy.substr(0, pwcopy.indexOf(usernamecopy)) +
                     pwcopy.substr(pwcopy.indexOf(usernamecopy) + usernamecopy.length);
             }
-            if (usernamecopy.length == 0 || pwcopy.length >= differenceFromUsername) {
+            if (usernamecopy.length == 0 || pw.length == 0 || pwcopy.length >= differenceFromUsername) {
                 compliant = true;
             }
 
