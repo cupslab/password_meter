@@ -440,7 +440,6 @@ export module RuleFunctions {
         sensitiveText: string;
     }
 
-    // potentialTODO only called from ui-misc
     export function pwLength(pw: string): PwLengthComment {
         /* return the number of characters in the pw along with commentary */
         var length: number = pw.length;
@@ -484,7 +483,6 @@ export module RuleFunctions {
         sensitiveText: string;
         fixedPw: string;
     }
-    // potentialTODO only called from ui-misc
     export function countUC(pw: string): UppercaseCountComment {
         /* Return a count of uppercase letters */
         var uppercaseCount = 0;
@@ -529,7 +527,6 @@ export module RuleFunctions {
         sensitiveText: string;
         fixedPw: string;
     }
-    // potentialTODO only called from ui-misc
     export function countLC(pw: string): LowercaseCountComment {
         /* Return a count of lowercase letters */
         var lowercaseCount = 0;
@@ -575,7 +572,6 @@ export module RuleFunctions {
         publicText: string;
         sensitiveText: string;
     }
-    // potentialTODO only called from ui-misc
     export function countDIGS(pw: string): DigitsCountComment {
         /* Return a count of digits */
         var digitCount = 0;
@@ -615,7 +611,6 @@ export module RuleFunctions {
         publicText: string;
         sensitiveText: string;
     }
-    // potentialTODO only called from ui-misc
     export function countSYMS(pw: string): SymbolsCountComment {
         /* Return a count of symbols (non-alphanumeric characters) */
         /* Remove alphanumeric characters and return the length of what's left */
@@ -652,7 +647,6 @@ export module RuleFunctions {
         publicText: string;
         sensitiveText: string;
     }
-    // potentialTODO only called from ui-misc
     export function characterClasses(pw: string) {
         /* count: number of classes in pw */
         var numClasses = 0;
@@ -769,7 +763,6 @@ export module RuleFunctions {
         fixedPw: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function uppercasePredictable(pw: string): UppercasePredictableComment {
         /* Evaluate whether uppercase letters are in predictable locations */
         // score is 1 if first letter or all letters are capitalized
@@ -842,7 +835,6 @@ export module RuleFunctions {
         problemText: string;
         deltas: Array<number>;
     }
-    // potentialTODO only called from ui-misc
     export function digitsPredictable(pw: string): DigitsPredictableComment {
         /* Evaluate whether digits are in predictable locations */
         /* score 1 if yes */
@@ -944,7 +936,6 @@ export module RuleFunctions {
         problemText: string;
         deltas: Array<number>;
     }
-    // potentialTODO only called from ui-misc
     export function symbolsPredictable(pw: string): SymbolsPredictableComment {
         /* Evaluate whether symbols are in predictable locations */
         /* score 1 if yes */
@@ -1020,7 +1011,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function keyboardPatterns(pwUnfiltered: string): KeyboardPatternsComment {
         /* return the number of characters contained in a keyboard pattern.
         if there are non-consecutive keyboard patterns (e.g., qwert621asdfg),
@@ -1203,7 +1193,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function duplicatedCharacters(pw: string): DuplicatedCharactersComment {
         /* returns the total number of characters that are duplicates of characters
         used previously in the password. The repetition of characters does not need to
@@ -1248,7 +1237,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function repeatedSections(pw: string): RepeatedSectionsComment {
         // Checks pw for both mirrored and repeated sequences
         // Returns # characters duplicated (e.g., cmucmu returns 3, while cmucmucmu returns 6)
@@ -1326,7 +1314,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function repeats(pw: string): RepeatsComment {
         /* returns the number of characters in the longest string of at least 3+
         consecutive, repeated characters (e.g., ``monkeeey'' returns 3, while
@@ -1387,7 +1374,6 @@ export module RuleFunctions {
         problemText: string;
         remaining: string;
     }
-    // potentialTODO only called from ui-misc
     export function contextual(pw: string, form_data: Array<string>): ContextualComment {
         /* Takes a pw and an array of contextual form_data strings (e.g., from username field)
            Returns the length of the longest string of characters in the password that are from the context */
@@ -1437,7 +1423,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function commonSubstringCheck(pw: string): CommonSubstringComment {
         /* this function should, given a password, return the number of characters in the
         password that are common substrings in passwords. */
@@ -1490,7 +1475,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function commonPwCheck(listofSS: Array<string>): CommonPwComment {
         /* this function should, given a list of password substrings
         return the length of the longest match on this list (case insensitive). */
@@ -1532,7 +1516,6 @@ export module RuleFunctions {
         problemText: string;
         remaining: string;
     }
-    // potentialTODO only called from ui-misc
     export function blacklist(pw: string): BlacklistComment {
         /* this function should, given a password and a set of site-specific words,
         return the number of characters in the password that are on that list of words */
@@ -1649,7 +1632,6 @@ export module RuleFunctions {
         dictionaryTokens: number;
         substitutionCommonness: number;
     }
-    // potentialTODO only called from ui-misc
     export function combinedDictCheck(pw: string): DictCheckComment {
         /* Note: when creating the dictionaries, be sure that they are disjoint!
         This function assumes they are. Also assumes dictionary entries all contain at
@@ -1855,7 +1837,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function identifyDates(pw: string): DatesComment {
         /* this function should return the number of characters that appear to be part of a date
         see https://www.researchgate.net/profile/Christopher_Collins5/publication/235945835_Visualizing_semantics_in_passwords_the_role_of_dates/links/00b7d52956af68fd0c000000.pdf */
@@ -1965,7 +1946,6 @@ export module RuleFunctions {
         sensitiveText: string;
         problemText: string;
     }
-    // potentialTODO only called from ui-misc
     export function alphabeticSequenceCheck(pw: string): AlphaSequenceComment {
         /* return the number of characters the are part of 3+ character sequences
            (e.g., abc), defined using the ASCII code for those characters. if there
@@ -2071,7 +2051,6 @@ export module RuleFunctions {
         publicText: string;
         sensitiveText: string;
     }
-    // potentialTODO only called from ui-misc
     export function structurePredictable(pw: string): StructureComment {
         /* return value 1 (nth most common) - numStructures (1st most common) if the
         password has one of the numStructures most common character-class structures,
