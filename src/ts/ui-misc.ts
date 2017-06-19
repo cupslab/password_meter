@@ -111,7 +111,7 @@ export module UIMisc {
 		// Save what the password is at this point and transfer 
 		// the password from the main window to the modal
 		storepw(): void {
-			var pw = this.$("#pwbox").val();
+			var pw = this.$("#pwbox").val() as string;
 			this.pwWhenModalOpened = pw;
 			this.$("#pwboxModal").val(pw);
 		}
@@ -158,13 +158,13 @@ export module UIMisc {
 			this.storepw();
 			this.$("#discardButton").hide();
 			this.$("#keepButton").html("OK");
-			this.$("#myModal").modal("show");
+			this.$("#myModal").show();
 		}
 
 		// To save computation, only rate the password if it has changed
 		mayberate(): void {
 			if (this.$("#pwbox").val() !== this.previouslyRated) {
-				this.previouslyRated = this.$("#pwbox").val();
+				this.previouslyRated = this.$("#pwbox").val() as string;
 				this.spawnRating();
 			}
 		}
@@ -173,12 +173,16 @@ export module UIMisc {
 		continueCheck(triedToSubmit: boolean): void {
 			var compliantOverall = true;
 			// Make sure username is non-empty
-			if (triedToSubmit && this.$("#usernamebox").val().length < 1) {
-				this.$("#usernameTooShort").show();
-				compliantOverall = false;
-			} else {
-				this.$("#usernameTooShort").hide();
+			if (triedToSubmit) {
+				var username = this.$("#usernamebox").val() as string;
+				if (username.length < 1) {
+					this.$("#usernameTooShort").show();
+					compliantOverall = false;
+				} else {
+					this.$("#usernameTooShort").hide();
+				}
 			}
+
 			// Check compliance with the password-composition policy
 			if (!this.inCompliance) {
 				compliantOverall = false;
@@ -228,11 +232,11 @@ export module UIMisc {
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var nn = nni.nn;
 			if (this.$("#myModal").data("bs.modal") && this.$("#myModal").data("bs.modal").isShown) {
-				pw = this.$("#pwboxModal").val();
+				pw = this.$("#pwboxModal").val() as string;
 			} else {
-				pw = this.$("#pwbox").val();
+				pw = this.$("#pwbox").val() as string;
 			}
-			var username = this.$("#usernamebox").val();
+			var username = this.$("#usernamebox").val() as string;
 			var ratingsComplete = 0;
 			if (typeof (this.neuralnetMapping[pw]) === "undefined") {
 				// Signal that we are calculating it to avoid duplicate work
@@ -309,7 +313,7 @@ export module UIMisc {
 			}
 
 			// Check the modification's compliance with the password-composition policy
-			var currentUsername = this.$("#usernamebox").val();
+			var currentUsername = this.$("#usernamebox").val() as string;
 
 			var verified = RuleFunctions.RuleFunctions.verifyMinimumRequirements(modifiedPW, currentUsername);
 			if (verified.compliant) {
@@ -346,7 +350,7 @@ export module UIMisc {
 		spawnFixedRating(pw: string): void {
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var nnFixed = nni.nnfixed;
-			var username = this.$("#usernamebox").val();
+			var username = this.$("#usernamebox").val() as string;
 			if (typeof (this.neuralnetMapping[pw]) === "undefined") {
 				this.neuralnetMapping[pw] = -1; // signal that we are calculating it to avoid duplicate work
 				nnFixed.query_guess_number(pw); // asynchronously calculate neural network guess number
@@ -432,10 +436,10 @@ export module UIMisc {
 			}
 			// Try recursively adding more to the password (to a depth), 
 			// but only if it's still the current password (avoid extra computation)
-			var currentpw = this.$("#pwbox").val();
+			var currentpw = this.$("#pwbox").val() as string;
 			// If the modal is open, the current password is actually what's there
 			if (this.$("#myModal").data("bs.modal") && this.$("#myModal").data("bs.modal").isShown) {
-				currentpw = this.$("#pwboxModal").val();
+				currentpw = this.$("#pwboxModal").val() as string;
 			}
 			if (this.recommendedFixes[currentpw] === fixedpw
 				&& numberOfScores === 2
@@ -751,7 +755,7 @@ export module UIMisc {
 
 			var config = PasswordMeter.PasswordMeter.instance.getConfig();
 
-			var currentUsername = this.$("#usernamebox").val();
+			var currentUsername = this.$("#usernamebox").val() as string;
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 
 			var minReqObj = RuleFunctions.RuleFunctions.verifyMinimumRequirements(pw, currentUsername);
@@ -1033,12 +1037,12 @@ export module UIMisc {
 		modalShowCheck(): void {
 			//checks whether they've checked the box to show their password
 			if (this.$("#pwbox").prop("type") == "text") {
-				this.$('#myModal').modal('show');
+				this.$('#myModal').show();
 				this.storepw();
 				// potentialTODO what is rate? mayberate? commenting.
 				//this.rateModal();
 			} else if (this.$('#expandHelpDiv').is(':visible')) {
-				this.$('#myModal').modal('show');
+				this.$('#myModal').show();
 				this.storepw();
 				// potentialTODO what is rate? mayberate? commenting.
 				//this.rateModal();
@@ -1053,8 +1057,8 @@ export module UIMisc {
 
 		// potentialTODO where do the fn params come from?
 		deselect(e: JQuery): void {
-			if (this.$.fn.slideFadeToggle == undefined) {
-				this.$.fn.slideFadeToggle = function (easing: string, callback: Function) {
+			if ((this.$.fn as any).slideFadeToggle == undefined) {
+				(this.$.fn as any).slideFadeToggle = function (easing: string, callback: Function) {
 					return this.animate({
 						opacity: 'toggle',
 						height: 'toggle'
