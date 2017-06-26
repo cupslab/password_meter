@@ -4,6 +4,7 @@
   "description": "Password Meter",
   "main": "PasswordMeter.js",
   "devDependencies": {
+    "@types/core-js": "0.9.36",
     "@types/jquery": "latest",
     "@types/lz-string": "latest",
     "tsify": "latest",

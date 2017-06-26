@@ -779,7 +779,7 @@ export module RuleFunctions {
                 score = 1;
                 publicText = "Capitalize a letter in the middle";
                 sensitiveText = "Capitalize a letter in the middle, rather than the first character";
-                problemText = pw.charAt(0);
+                problemText = pw.charAt(0).escapeHTML();
                 reasonWhy = "30% of people also capitalize only the first character";
 
                 var llLocations = new Array<number>(); // find locations of lowercase letters
@@ -856,7 +856,7 @@ export module RuleFunctions {
             score = 1;
             publicText = "Add more letters and symbols to your password";
             sensitiveText = "Add characters other than digits to your password";
-            problemText = pw;
+            problemText = pw.escapeHTML();
             reasonWhy = "35% of people also use only digits";
 
             // potentialTODO what classes do we allow?
@@ -878,7 +878,7 @@ export module RuleFunctions {
             while (pw.charCodeAt(firstNonDigit) >= 48 && pw.charCodeAt(firstNonDigit) <= 57) {
                 firstNonDigit++;
             }
-            problemText = pw.slice(0, firstNonDigit);
+            problemText = pw.slice(0, firstNonDigit).escapeHTML();
             // move digits somewhere in the middle
             var loc1 = Math.floor(firstNonDigit + 1 + Math.random() * (pw.length - firstNonDigit - 1));
             fixedPW = pw.slice(firstNonDigit, loc1) + pw.slice(0, firstNonDigit) + pw.slice(loc1);
@@ -900,7 +900,7 @@ export module RuleFunctions {
             while (pw.charCodeAt(lastNonDigit) >= 48 && pw.charCodeAt(lastNonDigit) <= 57) {
                 lastNonDigit--;
             }
-            problemText = pw.slice(lastNonDigit + 1);
+            problemText = pw.slice(lastNonDigit + 1).escapeHTML();
             // move digits somewhere in the middle
             var loc1 = Math.floor(1 + Math.random() * (pw.length - lastNonDigit - 1));
             fixedPW = pw.slice(0, loc1) + pw.slice(lastNonDigit + 1) + pw.slice(loc1, lastNonDigit + 1);
@@ -956,10 +956,11 @@ export module RuleFunctions {
             score = 1;
             sensitiveText = "Move symbols and digits earlier, rather than just at the end";
             publicText = "Move symbols and digits elsewhere in your password";
-            problemText = (pw.match(SYMBOLS))[0];
+            problemText = (pw.match(SYMBOLS))[0].escapeHTML();
             reasonWhy = "14% of people also use letters, followed by symbols, followed by digits";
             var startOfSymbols = pw.search(SYMBOLS); // find start of symbols
-            problemText = pw.slice(startOfSymbols);
+            // XXXstroucki why are we overwriting problemText?
+            problemText = pw.slice(startOfSymbols).escapeHTML();
             // move symbols somewhere in the middle
             var loc1 = Math.floor(1 + Math.random() * (startOfSymbols - 1));
             fixedPW = pw.slice(0, loc1) + pw.slice(startOfSymbols) + pw.slice(loc1, startOfSymbols);
@@ -978,7 +979,7 @@ export module RuleFunctions {
             publicText = "Move symbols and digits elsewhere in your password";
             reasonWhy = "16% of people also put symbols only at the end of the password";
             var startOfSymbols = pw.search(SYMBOLS); // find start of symbols
-            problemText = pw.slice(startOfSymbols);
+            problemText = pw.slice(startOfSymbols).escapeHTML();
             // move symbols somewhere in the middle
             var loc1 = Math.floor(1 + Math.random() * (startOfSymbols - 1));
             fixedPW = pw.slice(0, loc1) + pw.slice(startOfSymbols) + pw.slice(loc1, startOfSymbols);
@@ -1167,7 +1168,7 @@ export module RuleFunctions {
         var problemText = "";
         var reasonWhy = "";
         if (score >= 4) { // if keyboard pattern of at least 4 characters
-            problemText = pw.substring(longestmatchstart, longestmatchstart + longestmatchlength + 1);
+            problemText = pw.substring(longestmatchstart, longestmatchstart + longestmatchlength + 1).escapeHTML();
             publicText = "Avoid using a pattern on your keyboard";
             sensitiveText = "Avoid using a pattern on your keyboard like <b>" + problemText + "</b>";
             reasonWhy = "Because keyboard patterns are very common in passwords, attackers know to guess them";
@@ -1260,10 +1261,10 @@ export module RuleFunctions {
                     (i + len) <= start; i++) { // look before the substring was extracted
                     if (pw.substring(i, i + len) === currentForwards) {
                         count += len;
-                        problemText = currentForwards;
+                        problemText = currentForwards.escapeHTML();
                     } else if (pw.substring(i, i + len) === currentBackwards) {
                         count += len;
-                        problemText = currentForwards;
+                        problemText = currentForwards.escapeHTML();
                         backwards = true;
                     }
                 }
@@ -1271,10 +1272,10 @@ export module RuleFunctions {
                     (i + len) <= pwLength; i++) { // after substring was extracted
                     if (pw.substring(i, i + len) === currentForwards) {
                         count += len;
-                        problemText = currentForwards;
+                        problemText = currentForwards.escapeHTML();
                     } else if (pw.substring(i, i + len) === currentBackwards) {
                         count += len;
-                        problemText = currentForwards;
+                        problemText = currentForwards.escapeHTML();
                         backwards = true;
                     }
                 }
@@ -1348,6 +1349,7 @@ export module RuleFunctions {
             for (var j = 0; j < count; j++) {
                 problemText += most_repeated;
             }
+            problemText = problemText.escapeHTML();
             sensitiveText = "Don't repeat the same character (<b>" + problemText + "</b>) many times in a row";
             reasonWhy = "Hitting the same key over and over adds little to your password's strength";
         }
@@ -1396,7 +1398,7 @@ export module RuleFunctions {
 
         if (longestOverlap.length >= 5) {
             count = longestOverlap.length;
-            problemText = longestOverlap;
+            problemText = longestOverlap.escapeHTML();
             publicText = "Don't use your account information in your password";
             sensitiveText = "Don't use your account information (<b>" + problemText + "</b>) in your password";
             reasonWhy = "Attackers know to guess your username and email address as part of your password";
@@ -1453,7 +1455,7 @@ export module RuleFunctions {
                 collapsed + "</b>";
             reasonWhy = "Even if they don't make sense, these strings of characters show up in " +
                 "many passwords, which makes them bad to use in yours.";
-            problemText = matchedSubstrings[0]; // zzz for now just give first one
+            problemText = matchedSubstrings[0].escapeHTML(); // zzz for now just give first one
             for (var j = 0; j < matchedSubstrings.length; j++) {
                 count += matchedSubstrings[j].length;
             }
@@ -1487,8 +1489,8 @@ export module RuleFunctions {
                 // dictionary entries are booleans
                 var publicText = "Avoid using very common passwords as part of your own password";
                 var sensitiveText = "Avoid using very common passwords like <b>" + listofSS[i] + "</b> as part of your own password";
-                var problemText = listofSS[i];
-                var length = problemText.length;
+                var problemText = listofSS[i].escapeHTML();
+                var length = listofSS[i].length;
                 // only one is enough
                 return {
                     length: length,
@@ -1572,7 +1574,7 @@ export module RuleFunctions {
 
             if (foundMatch.length > 0) {
                 if (problemText.length == 0) { // zzz currently only taking longest. fix later
-                    problemText = listofSS[i];
+                    problemText = listofSS[i].escapeHTML();
                 }
                 // remove the matched substring from password parts.
                 for (var z = 0; z < pwParts.length; z++) {
@@ -1752,7 +1754,7 @@ export module RuleFunctions {
 
             if (foundMatch.length > 0) {
                 if (problemText.length == 0) {
-                    problemText = listofSS[i];
+                    problemText = listofSS[i].escapeHTML();
                 }
                 // remove the matched substring from password parts.
                 for (var z = 0; z < pwParts.length; z++) {
@@ -1927,7 +1929,7 @@ export module RuleFunctions {
             publicText = "Avoid using dates";
             sensitiveText = "Avoid using dates like " + Helper.Helper.boldAll(datesUsed).toHumanString();
             reasonWhy = "Dates and years in any format are quite common in passwords";
-            problemText = datesUsed[0]; // zzz this should be an array
+            problemText = datesUsed[0].escapeHTML(); // zzz this should be an array
         }
 
         return {
@@ -2023,9 +2025,10 @@ export module RuleFunctions {
                 score++;
             }
             if (score >= 4) { // only show text if at least 4 characters
-                problemText = pw.substr(longestmatchstart, longestmatchstart + longestmatchlength + 1);
+                var myProblem = pw.substr(longestmatchstart, longestmatchstart + longestmatchlength + 1);
+                problemText = myProblem.escapeHTML();
                 var ALLDIGITS = new RegExp("^[0-9]+$");
-                if (problemText.match(ALLDIGITS)) {
+                if (myProblem.match(ALLDIGITS)) {
                     publicText = "Avoid numerical patterns";
                     sensitiveText = "Avoid numerical patterns like <b>" + problemText + "</b>";
                 } else {
