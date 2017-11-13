@@ -45,11 +45,9 @@ Finally, the neural network that estimates password strength needs to be trained
 
 Our meter depends on two common external web-development libraries:
 
-  * JQuery (minified version 2.2.4 JS file used for testing) https://jquery.com/
-  * Bootstrap (minified version 3.3.6 of both the CSS and JS file used for testing) http://getbootstrap.com/
+  * JQuery (minified version 3.2.1 JS file used for testing) https://jquery.com/
+  * Bootstrap (minified version 3.3.7 of both the CSS and JS file used for testing) http://getbootstrap.com/
   * lz-string.js http://pieroxy.net/blog/pages/lz-string/testing.html
-
-Note that Bootstrap 3.x currently requires JQuery 2.x and is not compatible with JQuery version 3.x.
 
 
 ## Setup

@@ -158,7 +158,7 @@ export module UIMisc {
 			this.storepw();
 			this.$("#discardButton").hide();
 			this.$("#keepButton").html("OK");
-			this.$("#myModal").show();
+			(this.$("#myModal") as any).modal('show');
 		}
 
 		// To save computation, only rate the password if it has changed
@@ -1037,12 +1037,12 @@ export module UIMisc {
 		modalShowCheck(): void {
 			//checks whether they've checked the box to show their password
 			if (this.$("#pwbox").prop("type") == "text") {
-				this.$('#myModal').show();
+				(this.$('#myModal') as any).modal('show');
 				this.storepw();
 				// potentialTODO what is rate? mayberate? commenting.
 				//this.rateModal();
 			} else if (this.$('#expandHelpDiv').is(':visible')) {
-				this.$('#myModal').show();
+				(this.$('#myModal') as any).modal('show');
 				this.storepw();
 				// potentialTODO what is rate? mayberate? commenting.
 				//this.rateModal();
