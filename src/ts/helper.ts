@@ -2,6 +2,7 @@
 import JQuery = require("jquery");
 import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
+import LogLevel = require("loglevel");
 
 export module Helper {
 	interface MatchFoo {
@@ -26,14 +27,12 @@ export module Helper {
 	export class Helper {
 		$: JQueryStatic;
 		LZString: LZString.LZStringStatic;
-		verboseMode: boolean;
-		log: (x: string) => void;
+		log: LogLevel.Logger;
 
-		constructor(jquery: JQueryStatic, lzstring: LZString.LZStringStatic, verboseMode: boolean) {
+		constructor(jquery: JQueryStatic, lzstring: LZString.LZStringStatic, log: LogLevel.Logger) {
 			this.$ = jquery;
 			this.LZString = lzstring;
-			this.verboseMode = verboseMode;
-			this.log = verboseMode && window.console ? console.log : function () { };
+			this.log = log;
 		}
 
 		private buildDict(words: Array<string>, dict: { [key: string]: boolean }): number {
@@ -63,12 +62,11 @@ export module Helper {
 		fileToDict(file: string): { [key: string]: boolean } {
 			var dict: { [key: string]: boolean } = {};
 			var fBuildDict = this.buildDict;
+			var log = this.log;
 			this.$.get(file, function (s) {
 				var words = s.split("\n"); // get as an array
 				var added = fBuildDict(words, dict);
-				if (this.verboseMode) {
-					this.log("Loaded " + added + " words to dictionary.")
-				}
+				log.debug("Loaded " + added + " words to dictionary.");
 			});
 			return dict;
 		}
@@ -80,9 +78,7 @@ export module Helper {
 			var dict: { [key: string]: boolean } = {};
 			var added: number = this.buildDict(words, dict);
 
-			if (this.verboseMode) {
-				this.log("Loaded " + added + " words to the dictionary.");
-			}
+			this.log.debug("Loaded " + added + " words to the dictionary.");
 			return dict;
 		}
 
@@ -91,13 +87,12 @@ export module Helper {
 			var dict: { [key: string]: boolean } = {};
 			var fLZString = this.LZString;
 			var fBuildDict = this.buildDict;
+			var log = this.log;
 			this.$.get(path, function (s) {
 				var decompressed = fLZString.decompressFromEncodedURIComponent(s);
 				var words: Array<string> = decompressed.split(",");
 				var added: number = fBuildDict(words, dict);
-				if (this.verboseMode) {
-					this.log("Decompressed and loaded " + added + " words to the dictionary.");
-				}
+				log.debug("Decompressed and loaded " + added + " words to the dictionary.");
 			});
 			return dict;
 		}
@@ -108,14 +103,13 @@ export module Helper {
 		// ENSURES: creates an array from the given file path
 		fileToArray(path: string): Array<string> {
 			var a: Array<string> = [];
+			var log = this.log;
 			this.$.get(path, function (s) {
 				var pws: Array<string> = s.split("\n");
 				for (var i = 0; i < pws.length; i++) {
 					a.push(pws[i]);
 				}
-				if (this.verboseMode) {
-					this.log("Loaded" + pws.length + "passwords to an array.");
-				}
+				log.debug("Loaded" + pws.length + "passwords to an array.");
 			});
 			return a;
 		}
