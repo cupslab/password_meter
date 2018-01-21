@@ -46,6 +46,14 @@ export module PasswordMeter {
             return this.data["lzstring"];
         }
 
+        setLog(log: LogLevel.Logger): void {
+            this.data["log"] = log;
+        }
+
+        getLog(): LogLevel.Logger {
+            return this.data["log"];
+        }
+
         setHelper(helper: Helper.Helper.Helper): void {
             this.data["helper"] = helper;
         }
@@ -94,6 +102,7 @@ export module PasswordMeter {
     declare var LZString: LZString.LZStringStatic;
     declare var log: LogLevel.Logger;
     instance.setLzstring(LZString);
+    instance.setLog(log);
     var helper = new Helper.Helper.Helper($, LZString, log);
     instance.setHelper(helper);
 
