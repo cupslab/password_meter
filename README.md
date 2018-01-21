@@ -47,6 +47,7 @@ Our meter depends on two common external web-development libraries:
 
   * JQuery (minified version 3.2.1 JS file used for testing) https://jquery.com/
   * Bootstrap (minified version 3.3.7 of both the CSS and JS file used for testing) http://getbootstrap.com/
+  * loglevel (minified version of 1.6.0 JS file used for testing) https://github.com/pimterry/loglevel
   * lz-string.js http://pieroxy.net/blog/pages/lz-string/testing.html
 
 
@@ -56,6 +57,7 @@ To set up the meter, define the following global variables for the above depende
 
   * $ for JQuery with Bootstrap
   * LZString for LZString
+  * log for loglevel
   * passwordMeterConfig for configuration (optional, will default to 1class8 policy)
 
 
@@ -67,9 +69,11 @@ We label each file with its intended purpose within the meter: main file; neural
 
   * **basic_3M.weight_arch.quantized.fixed_point1000.zigzag.nospace.json** (Neural network computation) A JSON encoding of the artificial neural network we computed using a 3~MB (before optimizations and compression) network in which probabilities have been quantized and stored used fixed-point encoding and ZigZag encoding. The weights have been quantized to three decimal digits, as well. This model ignores letter capitalization, which must be post-processed. This file is for a 1class8 policy, and for other policies should be retrained using https://github.com/cupslab/neural_network_cracking
 
-  * **bootstrap.min.css** (Required external library) The Bootstrap library (version 3.3.6), minified http://getbootstrap.com/
+  * **bootstrap.min.css** (Required external library) The Bootstrap library (version 3.3.7), minified http://getbootstrap.com/
 
-  * **bootstrap.min.js** (Required external library) The Bootstrap library (version 3.3.6), minified http://getbootstrap.com/
+  * **bootstrap.min.js** (Required external library) The Bootstrap library (version 3.3.7), minified http://getbootstrap.com/
+
+  * **loglevel.min.js** (Required external library) The loglevel library (version 1.6.0), minified https://github.com/pimterry/loglevel
 
   * **config.css** (Visual layout) The primary configuration settings for the meter's visual design are located in this file. These settings include colors, fonts, sizes, and border radii.
 
@@ -87,7 +91,7 @@ We label each file with its intended purpose within the meter: main file; neural
 
   * **index.html** The main file for our demo meter. This file contains the HTML layout for our demo meter and the options for configuring the password-composition policy. It references, directly or indirectly, all of the other files.
 
-  * **jquery-2.2.4.min.js** (Required external library) The jquery library (version 2.2.4), minified. https://jquery.com/
+  * **jquery-3.2.1.min.js** (Required external library) The jquery library (version 3.2.1), minified. https://jquery.com/
 
   * **lz-string.js** (Required external library) A Javascript implementation of Lempel-Ziv-Welch (LZW) lossless compression. http://pieroxy.net/blog/pages/lz-string/testing.html
 
