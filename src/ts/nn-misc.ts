@@ -52,11 +52,13 @@ export module NeuralNetwork {
 		// Make 10^15 guesses fill 2/3rds of meter
 		const scaleToMeter = 67 / 15;
 
-		var UI = PasswordMeter.PasswordMeter.instance.getUI();
+		var instance = PasswordMeter.PasswordMeter.instance;
+		var UI = instance.getUI();
+		var log = instance.getLog();
+
 		result = result * uppercasePredictabilityPostProcessing(password);
-		if (verboseMode) {
-			console.log(password + " is NN guess # " + result);
-		}
+		log.info(password + " is NN guess # " + result);
+
 		neverHeardFromNN = false;
 		var value = log10(result) * scaleToMeter;
 		// With estimates, we can get fractional/negative guess numbers
@@ -82,11 +84,13 @@ export module NeuralNetwork {
 		// Make 10^15 guesses fill 2/3rds of meter
 		const scaleToMeter = 67 / 15;
 
-		var UI = PasswordMeter.PasswordMeter.instance.getUI();
+		var instance = PasswordMeter.PasswordMeter.instance;
+		var UI = instance.getUI();
+		var log = instance.getLog();
+
 		result = result * uppercasePredictabilityPostProcessing(password);
-		if (verboseMode) {
-			console.log("Fixed possibility " + password + " is NN guess # " + result);
-		}
+		log.info("Fixed possibility " + password + " is NN guess # " + result);
+
 		neverHeardFromNN = false;
 		var value = log10(result) * scaleToMeter;
 
@@ -128,7 +132,6 @@ export module NeuralNetwork {
 
 		var neuralNetworkConfig = config.neuralNetworkConfig;
 
-		var verboseMode = false;
 		var nnFixed = new NeuralNetworkClient(nnFixedCallback, neuralNetworkConfig);
 		var nn = new NeuralNetworkClient(nnCallback, neuralNetworkConfig);
 		var instance = new NeuralNetworkInterface(nn, nnFixed);

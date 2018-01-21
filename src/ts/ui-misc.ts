@@ -10,7 +10,6 @@ export module UIMisc {
 	export class UIMisc {
 		helper: Helper.Helper.Helper;
 		$: JQueryStatic;
-		verboseMode: boolean;
 
 		// Global variable to retain the password when the modal was opened,
 		// so that we later know whether or not to show a 'discard' button
@@ -57,11 +56,10 @@ export module UIMisc {
 		// We store this in a global to avoid double-calling the function each time.
 		private inCompliance: boolean = false;
 
-		constructor(verboseMode: boolean) {
+		constructor() {
 			var registry = PasswordMeter.PasswordMeter.instance;
 			this.helper = registry.getHelper();
 			this.$ = registry.getJquery();
-			this.verboseMode = verboseMode;
 		}
 
 		onReady(): void {
@@ -230,6 +228,7 @@ export module UIMisc {
 		spawnRating(): void {
 			var pw = "";
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
+			var log = PasswordMeter.PasswordMeter.instance.getLog();
 			var nn = nni.nn;
 			if (this.$("#myModal").data("bs.modal") && this.$("#myModal").data("bs.modal").isShown) {
 				pw = this.$("#pwboxModal").val() as string;
@@ -242,6 +241,7 @@ export module UIMisc {
 				// Signal that we are calculating it to avoid duplicate work
 				this.neuralnetMapping[pw] = -1;
 				// Asynchronously calculate neural network guess number
+				log.debug("sending "+pw+" to normal client");
 				nn.query_guess_number(pw);
 			} else if (this.neuralnetMapping[pw] >= 0) {
 				ratingsComplete++;
@@ -320,9 +320,8 @@ export module UIMisc {
 				// If it complies with the policy
 				this.recommendedFixes[originalPW] = modifiedPW;
 				this.deltaHighlighted[modifiedPW] = deltas;
-				if (this.verboseMode) {
-					console.log("identified " + modifiedPW + " as a potential fix for " + originalPW);
-				}
+				var log = PasswordMeter.PasswordMeter.instance.getLog();
+				log.info("identified " + modifiedPW + " as a potential fix for " + originalPW);
 				if (typeof (this.recommendedFixesTries[originalPW]) === "undefined") {
 					this.recommendedFixesTries[originalPW] = 1;
 				} else {
@@ -349,10 +348,12 @@ export module UIMisc {
 		// When those functions return, display will be called via callbacks.
 		spawnFixedRating(pw: string): void {
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
+			var log = PasswordMeter.PasswordMeter.instance.getLog();
 			var nnFixed = nni.nnfixed;
 			var username = this.$("#usernamebox").val() as string;
 			if (typeof (this.neuralnetMapping[pw]) === "undefined") {
 				this.neuralnetMapping[pw] = -1; // signal that we are calculating it to avoid duplicate work
+				log.debug("sending "+pw+" to fixed client");
 				nnFixed.query_guess_number(pw); // asynchronously calculate neural network guess number
 			}
 			if (typeof (this.heuristicMapping[pw]) === "undefined") {
@@ -385,18 +386,14 @@ export module UIMisc {
 					overallScore = this.neuralnetMapping[fixedpw];
 				}
 			}
-			if (this.verboseMode) {
-				console.log("potential fixed " + fixedpw + " from heuristic ("
-					+ this.heuristicMapping[fixedpw] + ") and neural nets ("
-					+ this.neuralnetMapping[fixedpw] + ")" + " " + numberOfScores);
-			}
+			log.debug("result for password: " + fixedpw + " heuristic: "
+					+ this.heuristicMapping[fixedpw] + " neuralnet: ("
+					+ this.neuralnetMapping[fixedpw] + " scores: " + numberOfScores);
 			// When we have a sufficiently strong concrete suggestion, 
 			// find all original passwords that include that as a potential fix 
 			// and set it as the mapping
 			if (numberOfScores === 2 && overallScore >= 67) {
-				if (this.verboseMode) {
-					console.log(fixedpw + " is a plausible fix above the 2/3rds threshold");
-				}
+				log.info(fixedpw + " is a plausible fix above the 2/3rds threshold");
 				for (var j in this.recommendedFixes) {
 					if (this.recommendedFixes[j] === fixedpw
 						&& typeof (this.fixedpwMapping[j]) === "undefined") {
@@ -417,14 +414,10 @@ export module UIMisc {
 						}
 						if (overallScore > (originalOverallScore + 15)) {
 							this.fixedpwMapping[j] = fixedpw;
-							if (this.verboseMode) {
-								console.log("mapping " + j + " to " + fixedpw);
-							}
+							log.info("mapping " + j + " to " + fixedpw);
 							changedAnyMappings = true;
 						} else {
-							if (this.verboseMode) {
-								console.log("not mapping " + j + " to " + fixedpw + " because it is not enough of an improvement " + originalOverallScore + " --> " + overallScore);
-							}
+							log.info("not mapping " + j + " to " + fixedpw + " because it is not enough of an improvement " + originalOverallScore + " --> " + overallScore);
 						}
 					}
 				}
@@ -447,9 +440,7 @@ export module UIMisc {
 				&& typeof (this.recommendedFixesTries[currentpw]) !== "undefined"
 				&& this.recommendedFixesTries[currentpw] < 8) {
 				// Try to generate a better concrete suggestion
-				if (this.verboseMode) {
-					console.log("trying again on " + fixedpw + " as current password is " + currentpw);
-				}
+				log.info("trying again on " + fixedpw + " as current password is " + currentpw);
 				this.generateCandidateFixed(fixedpw, 0, currentpw);
 			}
 			return 1;
@@ -689,6 +680,8 @@ export module UIMisc {
 
 			// Display the rating if it's the currently shown (primary) password
 			if (primaryPassword) {
+				// XXXstroucki we already call displayRating in spawnRating.
+				// are both necessary?
 				this.displayRating(originalPW);
 				// also cache modifications to a fixed password
 				if (digitsPredictableObj.fixedPw.length > 0) {
@@ -733,9 +726,7 @@ export module UIMisc {
 				overallScore = pw.length / 2; // make people see at least some progess is happening
 			}
 
-			if (this.verboseMode) {
-				console.log(pw + " overall from heuristic (" + this.heuristicMapping[pw] + ") and neural nets (" + this.neuralnetMapping[pw] + ")");
-			}
+			log.info(pw + " overall from heuristic (" + this.heuristicMapping[pw] + ") and neural nets (" + this.neuralnetMapping[pw] + ")");
 
 			// Avoid errors in case the feedback mapping was somehow screwed up
 			if (typeof (this.feedbackMapping[pw]) === "undefined") {
@@ -1076,8 +1067,7 @@ export module UIMisc {
 	(function () {
 		var registry = PasswordMeter.PasswordMeter.instance;
 		var $ = registry.getJquery();
-		var verboseMode = false;
-		var instance = new UIMisc(verboseMode);
+		var instance = new UIMisc();
 		registry.setUI(instance);
 
 		$(document).ready(function () {
