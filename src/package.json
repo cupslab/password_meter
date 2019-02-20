@@ -4,19 +4,21 @@
   "description": "Password Meter",
   "main": "PasswordMeter.js",
   "devDependencies": {
-    "@types/core-js": "0.9.36",
+    "@types/core-js": "latest",
     "@types/jquery": "latest",
     "@types/lz-string": "latest",
     "tsify": "latest",
     "typescript": "latest",
-    "babelify": "latest",
+    "babelify": "7.3.0",
     "uglifyify": "latest",
-    "browserify": "latest"
+    "browserify": "latest",
+    "@types/node": "latest"
   },
   "dependencies": {
+    "babel-core": "^6.0.0"
   },
   "scripts": {
-    "do-browserify" : "browserify ts/*.ts -p [ tsify --noImplicitAny ] -o PasswordMeter.js"
+    "do-browserify": "browserify ts/*.ts -p [ tsify --noImplicitAny ] -o PasswordMeter.js"
   },
   "browserify": {
     "transform": [
