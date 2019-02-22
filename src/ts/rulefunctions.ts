@@ -1,12 +1,9 @@
 import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import Helper = require("./helper");
-import Dictionaries = require("./dict-misc");
 import Constants = require("./constants");
+import NeuralNetwork = require("./nn-misc");
 
-/* ************** */
-/* Rule Functions */
-/* ************** */
 export module RuleFunctions {
     interface ResultsDetail {
         compliance: { [key: string]: boolean };
@@ -413,6 +410,33 @@ export module RuleFunctions {
                 explanation["usernameDifference"] = thisExplanation;
             }
             compliance["usernameDifference"] = compliant;
+        }
+
+        // min NN guess number requirement
+        if (config.minLogNnGuessNum.active) {
+            var compliant = false;
+            var thisExplanation = "";
+            var minLogNnGuessNum = config.minLogNnGuessNum.threshold;
+            var nni = PasswordMeter.PasswordMeter.instance.getNN();
+            var conservativeNnNum = nni.getNeuralNetNum(pw);
+            var unconservativeNnNum = conservativeNnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.scaleFactor);
+
+            if (conservativeNnNum < 0) {
+                console.log("looking up NN guess number: " + pw);
+            } else if (conservativeNnNum > minLogNnGuessNum) {
+                compliant = true;
+                console.log("high enough NN guess number: " + pw + " (" + conservativeNnNum +
+                    " > " + minLogNnGuessNum + ") [unconservative NN guess number: " + unconservativeNnNum + "]");
+            } else {
+                console.log("too low NN guess number: " + pw + " (" + conservativeNnNum +
+                    " < " + minLogNnGuessNum + ") [unconservative NN guess number: " + unconservativeNnNum + "]");
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
+            }
+
+            if (!compliant) {
+                explanation["minLogNnGuessNum"] = thisExplanation;
+            }
+            compliance["minLogNnGuessNum"] = compliant;
         }
 
         // potentialTODO reduce operation
@@ -1217,7 +1241,7 @@ export module RuleFunctions {
                 pluralSuffix = "s";
             }
             var sensitiveText = "Have more variety than repeating the same " + uniques.length +
-                " character" + pluralSuffix + " ("+Helper.Helper.boldAll(uniques.sort()).toHumanString()+")";
+                " character" + pluralSuffix + " (" + Helper.Helper.boldAll(uniques.sort()).toHumanString() + ")";
             reasonWhy = "Passwords that use only a few different characters are easy for " +
                 "attackers to guess";
         }
@@ -1540,7 +1564,7 @@ export module RuleFunctions {
         pw = pw.replace(/[-_ ]/g, ""); // remove characters that could delimit words
         //20mostCommon var pwParts = pw.split(/[^a-z012345!&@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
         var pwParts = pw.split(/[^a-z01345@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
-        pwParts = pwParts.filter(function (e) {
+        pwParts = pwParts.filter(function(e) {
             return e
         }); // this removes empty strings, etc.
         var listofSS = pwParts.listSubstringsMinMax(1, undefined); // returns substrings in descending order of length
@@ -1581,7 +1605,7 @@ export module RuleFunctions {
                     var ssLocation = pwParts[z].indexOf(foundMatch);
                     if (ssLocation > -1) { // remove; leave remainder of string
                         pwParts.splice(z, 1, pwParts[z].substring(0, ssLocation), pwParts[z].substring(ssLocation + foundMatch.length));
-                        pwParts = pwParts.filter(function (e) {
+                        pwParts = pwParts.filter(function(e) {
                             return e
                         });
                         break;
@@ -1611,7 +1635,7 @@ export module RuleFunctions {
                             wordsTheyShouldNotHaveUsed[i].length);
                 }
             }
-            sensitiveText = "Don't use site-specific terms ("+Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString()+")";
+            sensitiveText = "Don't use site-specific terms (" + Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString() + ")";
             reasonWhy = "Attackers target their attacks to words used on a particular service";
         }
 
@@ -1665,7 +1689,7 @@ export module RuleFunctions {
         // split the password:
         pw = pw.replace(/[-_ ]/g, ""); // remove characters that could delimit words
         var pwParts = pw.split(/[^A-Za-z012345!&@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
-        pwParts = pwParts.filter(function (e) {
+        pwParts = pwParts.filter(function(e) {
             return e
         });
         // this removes empty strings, etc.
@@ -1761,7 +1785,7 @@ export module RuleFunctions {
                     var ssLocation = pwParts[z].indexOf(foundMatch);
                     if (ssLocation > -1) { // remove; leave remainder of string
                         pwParts.splice(z, 1, pwParts[z].substring(0, ssLocation), pwParts[z].substring(ssLocation + foundMatch.length));
-                        pwParts = pwParts.filter(function (e) {
+                        pwParts = pwParts.filter(function(e) {
                             return e
                         });
                         // that cleared out empty strings etc
@@ -1782,11 +1806,11 @@ export module RuleFunctions {
         var complaintLength = 0; // keep track of how many characters were in a wordlist
         var complaintTokens = 0; // keep track of how many separate tokens (words) were used
 
-        var boldList = function (foo: Array<string>): string {
+        var boldList = function(foo: Array<string>): string {
             return Helper.Helper.boldAll(foo.removeDuplicates()).toHumanString();
         };
 
-        var fillComplaints = function (array: Array<string>, text: string): void {
+        var fillComplaints = function(array: Array<string>, text: string): void {
             if (array.length > 0) {
                 publicComplaints.push(text);
                 for (var i = 0; i < array.length; i++) {
@@ -1853,7 +1877,7 @@ export module RuleFunctions {
 
         var passwordParts = [pw]; // as we start removing things, keep an array of the remaining parts
 
-        var dateanalyze = function (rx: RegExp): void {
+        var dateanalyze = function(rx: RegExp): void {
             var resultObj = helper.matchHelper(passwordParts, rx);
             if (resultObj.score > 0) {
                 score += resultObj.score;
@@ -1877,45 +1901,45 @@ export module RuleFunctions {
         // identify dates YYYYMMDD without delimiters?
 
         // identify dates MM-DD-YYYY with delimiters
-        var rx = new RegExp(MM+DEL+DD+DEL+YYYY, "g");
+        var rx = new RegExp(MM + DEL + DD + DEL + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM-YYYY with delimiters
-        var rx = new RegExp(DD+DEL+MM+DEL+YYYY, "g");
+        var rx = new RegExp(DD + DEL + MM + DEL + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates MM-DD-YY with delimiters
-        var rx = new RegExp(MM+DEL+DD+DEL+YY, "g");
+        var rx = new RegExp(MM + DEL + DD + DEL + YY, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM-YY with delimiters
-        var rx = new RegExp(DD+DEL+MM+DEL+YY, "g");
+        var rx = new RegExp(DD + DEL + MM + DEL + YY, "g");
         dateanalyze(rx);
 
         // identify dates MMDDYYYY without delimiters
-        var rx = new RegExp(MM+DD+YYYY, "g");
+        var rx = new RegExp(MM + DD + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates DDMMYYYY without delimiters
-        var rx = new RegExp(DD+MM+YYYY, "g");
+        var rx = new RegExp(DD + MM + YYYY, "g");
         dateanalyze(rx);
 
         // in the future, maybe consider identifying dates MMDDYY without any delimiters, but there seem to be lots of false positives
 
         // identify spelled-out months and recent year (4 digits)
-        var rx = new RegExp(MMMM+YYYY, "ig");
+        var rx = new RegExp(MMMM + YYYY, "ig");
         dateanalyze(rx);
 
         // identify spelled-out months and recent year (2 digits)
-        var rx = new RegExp(MMMM+YY, "ig");
+        var rx = new RegExp(MMMM + YY, "ig");
         dateanalyze(rx);
 
         // identify dates MM-DD with delimiters/
-        var rx = new RegExp(MM+DEL+DD, "g");
+        var rx = new RegExp(MM + DEL + DD, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM with delimiters/
-        var rx = new RegExp(DD+DEL+MM, "g");
+        var rx = new RegExp(DD + DEL + MM, "g");
         dateanalyze(rx);
 
         // identify recent years between 1900 and 2049
