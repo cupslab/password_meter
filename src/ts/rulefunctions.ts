@@ -527,7 +527,7 @@ export module RuleFunctions {
             compliance["minLogNnGuessNum"] = compliant;
         }
 
-        // dimension 7: same character (repeated in password but not consecutively)
+        // same character (repeated in password but not consecutively)
         if (config.sameChars.active) {
             var sameCharsLimit = config.sameChars.limit;
             var thisExplanation = "";
@@ -547,6 +547,23 @@ export module RuleFunctions {
                 explanation["sameChars"] = thisExplanation;
             }
             compliance["sameChars"] = compliant;
+        }
+
+        // prohibit perviously-known leaked passwords
+        if (config.prohibitKnownLeaked.active) {
+
+            var compliant = false;
+            var thisExplanation = "";
+
+            if (pw.length < config.prohibitKnownLeaked.smallestLength || !dictionaries.previouslyLeaked(pw)) {
+                compliant = true;
+            } else {
+                compliant = false;
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + "Not use a password found in previous security leaks</span>";
+                explanation["prohibitKnownLeaked"] = thisExplanation;
+            }
+
+            compliance["prohibitKnownLeaked"] = compliant;
         }
 
         // potentialTODO reduce operation

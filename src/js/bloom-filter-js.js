@@ -1,3 +1,5 @@
+// https://github.com/bbondy/bloom-filter-js
+
 const toCharCodeArray = (str) => str.split('').map(c => c.charCodeAt(0))
 
 /**

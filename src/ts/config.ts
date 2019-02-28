@@ -44,6 +44,11 @@ export module Config {
         limit: number;
     }
 
+    interface ConfigSmallestLength {
+        active: boolean;
+        smallestLength: number;
+    }
+
     interface ConfigLimitLengthException {
         active: boolean;
         limit: number;
@@ -91,7 +96,7 @@ export module Config {
         sameChars: ConfigLimitLengthException;
         usernameDifference: ConfigLimit;
         minLogNnGuessNum: ConfigThreshold;
-        prohibitKnownLeaked: boolean;
+        prohibitKnownLeaked: ConfigSmallestLength;
         blacklist: ConfigBlacklist;
         neuralNetworkConfig: ConfigNeuralNetwork;
     }
@@ -163,14 +168,17 @@ export module Config {
             threshold: 7, // prohibit passwords with a NN guess number less than 10^7
             rejectionFeedback: "Not be similar to extremely common passwords",
         },
-        prohibitKnownLeaked: false,
+        prohibitKnownLeaked: {
+            active: true,
+            smallestLength: 5,
+        },
         blacklist: {
             active: false,
             blacklistFile: "blacklist-cmu-compressed.txt",
             caseSensitive: false,
             stripDigitsSymbolsFromPassword: false,
             checkSubstrings: false,
-            checkSubstringLength: 4,
+            checkSubstringLength: 5,
             lengthException: 20,
         },
         neuralNetworkConfig: {

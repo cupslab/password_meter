@@ -4,53 +4,6 @@ import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import BloomFilter = require("../js/bloom-filter-js");
 
-// export class BloomFilterInterface {
-//     bloomFilter: BloomFilter.BloomFilter;
-//     constructor(bitsPerElement: number,
-//         estimatedNumberOfElements: number) {
-//         var _BloomFilter: any = BloomFilter;
-//         this.bloomFilter = new _BloomFilter(bitsPerElement, estimatedNumberOfElements);
-//     }
-//     // Array<(hashFns: string) => (arrayValues: Array<string>, lastHash: string, lastCharCode: string)>);
-// }
-
-// declare class NeuralNetworkClient {
-//     constructor(cb: (n: number, s: string) => void, config: Config.Config.ConfigNeuralNetwork);
-//     query_guess_number(pw: string): void;
-// }
-
-// export class BloomFilterInterface {
-//     bloomFilter: NeuralNetworkClient;
-
-//     constructor(nn: NeuralNetworkClient, nnfixed: NeuralNetworkClient) {
-//         this.nn = nn;
-//         this.nnfixed = nnfixed;
-//     }
-
-//     public heardFromNn(): boolean {
-//         return !neverHeardFromNN;
-//     }
-
-//     // set the mapping from the neural network
-//     public setNeuralNetNum(pw: string, value: number): void {
-//         neuralNetMapping[pw] = value;
-//     }
-
-//     // set the mapping from the neural network
-//     public getNeuralNetNum(pw: string): number {
-//         return neuralNetMapping[pw];
-//     }
-
-//     // initiate NN guess number lookup
-//     public queryGuessNumber(pw: string, isConcreteSuggestionCandidate: boolean): void {
-//         if (isConcreteSuggestionCandidate) {
-//             this.nnfixed.query_guess_number(pw);
-//         } else {
-//             this.nn.query_guess_number(pw);
-//         }
-//     }
-// }
-
 export module Helper {
     interface MatchFoo {
         matched: Array<RegExpMatchArray>;
