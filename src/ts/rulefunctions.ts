@@ -305,7 +305,7 @@ export module RuleFunctions {
         //     compliance["forbidPasswords"] = compliant;
         // }
 
-        //   dimension 5: forbidden passwords
+        //  blacklist / forbidden passwords
         if (config.blacklist.active) {
             var thisExplanation = "";
             var compliant = false;
