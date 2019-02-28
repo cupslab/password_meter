@@ -1,11 +1,11 @@
 import PasswordMeter = require("./PasswordMeter");
 import Helper = require("./helper");
-import * as BloomFilter from "./bloom-filter-js";
+// import * as BloomFilter from "./bloom-filter-js"; // was also working
+import BloomFilter = require("../js/bloom-filter-js");
 import Config = require("./config");
 
 export module Dictionaries {
     export type Dictionary = { [key: string]: boolean };
-    export type BloomFilter = BloomFilter.BloomFilter;
 
     export class Dictionaries {
 
@@ -15,7 +15,7 @@ export module Dictionaries {
         // load dictionary-passwords-compressed.txt into it
         englishwordsDict: Dictionary;
         blacklistDict: Dictionary; // josh: use this for blacklist rule, not passwordsDict
-        blacklistBloom: BloomFilter;
+        blacklistBloom: BloomFilter.BloomFilter;
         wikipediaDict: Dictionary;
         petnames: Dictionary;
 

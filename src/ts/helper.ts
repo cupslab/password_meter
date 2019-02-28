@@ -2,8 +2,7 @@
 import JQuery = require("jquery");
 import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
-import BloomFilter = require("./bloom-filter-js");
-// import * as BloomFilter from "./bloom-filter-js";
+import BloomFilter = require("../js/bloom-filter-js");
 
 // export class BloomFilterInterface {
 //     bloomFilter: BloomFilter.BloomFilter;
