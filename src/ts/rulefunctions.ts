@@ -264,45 +264,133 @@ export module RuleFunctions {
             compliance["classAllow"] = compliant;
         }
 
+        // //   dimension 5: forbidden passwords
+        // // potentialTODO how much of this is covered by forbidPasswords?
+        // if (config.forbidPasswords.active) {
+        //     // potentialTODO put this under forbidPasswords?
+        //     var forbiddenPasswords = config.forbiddenPasswords;
+        //     var includelargerlist = config.forbidPasswords.includeLargerList;
+        //     var thisExplanation = "";
+        //     var compliant = false;
+
+        //     // explain
+        //     thisExplanation = "Not be an extremely common password";
+
+        //     // check
+        //     // if it's in our small array from the config file OR,
+        //     // assuming we included the larger list, it's on that list (case-insensitive)
+
+        //     // potentialTODO use Array.contains? no strictness.
+        //     if (pw.length === 0 || forbiddenPasswords.indexOf(pw.toLowerCase()) === -1) {
+        //         if (includelargerlist) {
+        //             if (pw.length === 0 || dictionaries.passwordsDict[pw.toLowerCase()] !== true) {
+        //                 compliant = true;
+        //             }
+        //         } else {
+        //             compliant = true;
+        //         }
+        //     }
+
+        //     // report
+        //     // note that we are only complaining about disallowed passwords if they use one
+        //     if (compliant) {
+        //     } else {
+        //         thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
+
+        //     }
+
+        //     if (!compliant) {
+        //         explanation["forbidPasswords"] = thisExplanation;
+        //     }
+        //     compliance["forbidPasswords"] = compliant;
+        // }
+
         //   dimension 5: forbidden passwords
-        // potentialTODO how much of this is covered by forbidPasswords?
-        if (config.forbidPasswords.active) {
-            // potentialTODO put this under forbidPasswords?
-            var forbiddenPasswords = config.forbiddenPasswords;
-            var includelargerlist = config.forbidPasswords.includeLargerList;
+        if (config.blacklist.active) {
             var thisExplanation = "";
             var compliant = false;
+            var blacklisted = false;
 
             // explain
             thisExplanation = "Not be an extremely common password";
 
-            // check
-            // if it's in our small array from the config file OR,
-            // assuming we included the larger list, it's on that list (case-insensitive)
+            var isBlacklisted = false;
+            if (pw.length > 0) {
 
-            // potentialTODO use Array.contains? no strictness.
-            if (pw.length === 0 || forbiddenPasswords.indexOf(pw.toLowerCase()) === -1) {
-                if (includelargerlist) {
-                    if (pw.length === 0 || dictionaries.passwordsDict[pw.toLowerCase()] !== true) {
-                        compliant = true;
-                    }
-                } else {
-                    compliant = true;
+                var stringToCheck = pw; // default is case-sensitive fullstring
+                if (config.blacklist.stripDigitsSymbolsFromPassword) {
+                    stringToCheck = stringToCheck.replace(/[^a-zA-Z]/gi, '');
                 }
+                if (!config.blacklist.caseSensitive) {
+                    stringToCheck = stringToCheck.toLowerCase();
+                }
+
+                // switch (blacklistAlgorithm) {
+                //     case "lc_strip_num_sym_fullstring":
+                //         stringToCheck = pw.replace(/[^a-zA-Z]/gi, '');
+                //         stringToCheck = stringToCheck.toLowerCase();
+                //         break;
+                //     case "case_ins_fullstring":
+                //     case "case_ins_substring":
+                //         stringToCheck = pw.toLowerCase();
+                //         break;
+                //     default: // fullstring
+                //         stringToCheck = pw;
+                //         break;
+                // }
+                isBlacklisted = dictionaries.blacklistRejects(stringToCheck);
+
+                // if (!config.blacklist.checkSubstrings) {
+                //     // just do fullstring for stringToCheck
+                //     isBlacklisted = dictionaries.passwordsDict[stringToCheck];
+                // } else {
+                //     isBlacklisted = blacklistBloom.substringExists(pwdToCheck, blacklistSubstringLength);
+
+                // }
+                // switch (blacklistAlgorithm) {
+                //     case "case_ins_substring":
+                //         isBlacklisted = substringOfPwdIsBlacklisted(stringToCheck);
+                //         break;
+                //     default: // fullstring-based matching algs
+                //         isBlacklisted = blacklistDict[stringToCheck]; // also load appropriate lettercased blacklist in conditionX.php		
+                //         break;
+                // }
+
             }
+
+            // // check
+            // // if it's in our small array from the config file OR,
+            // // assuming we included the larger list, it's on that list (case-insensitive)
+
+            // // potentialTODO use Array.contains? no strictness.
+            // if (pw.length === 0 || forbiddenPasswords.indexOf(pw.toLowerCase()) === -1) {
+            //     if (includelargerlist) {
+            //         if (pw.length === 0 || dictionaries.passwordsDict[pw.toLowerCase()] !== true) {
+            //             compliant = true;
+            //         }
+            //     } else {
+            //         compliant = true;
+            //     }
+            // }
+
+            compliant = !isBlacklisted ||
+                pw.length === 0 ||
+                (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
+
 
             // report
             // note that we are only complaining about disallowed passwords if they use one
             if (compliant) {
+                //console.log(stringToCheck + " is not on the blacklist [password: " + pw + "]");
             } else {
                 thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
-
+                //console.log(stringToCheck + " IS on the blacklist [password: " + pw + "]");
             }
 
             if (!compliant) {
-                explanation["forbidPasswords"] = thisExplanation;
+                explanation["blacklist"] = thisExplanation;
             }
-            compliance["forbidPasswords"] = compliant;
+            compliance["blacklist"] = compliant;
         }
 
         //   dimension 6: forbidden/permitted characters
@@ -439,6 +527,28 @@ export module RuleFunctions {
             compliance["minLogNnGuessNum"] = compliant;
         }
 
+        // dimension 7: same character (repeated in password but not consecutively)
+        if (config.sameChars.active) {
+            var sameCharsLimit = config.sameChars.limit;
+            var thisExplanation = "";
+            var compliant = false;
+
+            // explain
+            if (pw.length >= config.sameChars.lengthException || (satisfiesMaxChar(pw, sameCharsLimit))) {
+                compliant = true;
+            }
+            else {
+                thisExplanation = "Not contain the same character more than " + sameCharsLimit.toString() + "+ times";
+            }
+
+            // report (only explain if violate requirement)
+            if (!compliant) {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
+                explanation["sameChars"] = thisExplanation;
+            }
+            compliance["sameChars"] = compliant;
+        }
+
         // potentialTODO reduce operation
         var overallCompliance: boolean = true;
         for (const item in compliance) {
@@ -455,6 +565,22 @@ export module RuleFunctions {
         };
 
         return ret;
+    }
+
+    function satisfiesMaxChar(pw: string, maxAllowed: number) {
+        var pwChars = {};
+        for (var i = 0; i < pw.length; i++) {
+            var pwChar = pw.charAt(i);
+            if (pwChar in pwChars) {
+                pwChars[pwChar] = pwChars[pwChar] + 1;
+                if (pwChars[pwChar] > maxAllowed) {
+                    return false;
+                }
+            } else {
+                pwChars[pwChar] = 1;
+            }
+        }
+        return true;
     }
 
     interface PwLengthComment {
