@@ -8,6 +8,7 @@
     "@types/jquery": "latest",
     "@types/lz-string": "latest",
     "@types/node": "latest",
+    "@types/bootstrap": "latest",
     "babel-cli": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babelify": "7.3.0",

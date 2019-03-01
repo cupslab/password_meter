@@ -135,6 +135,12 @@ export module UIMisc {
             this.$("#pwbox").val(this.$("#pwboxModal").val());
         }
 
+        // They chose to discard their modal-modified password,
+	// so transfer the original password back to the main window
+        discardpw(): void {
+            this.$("#pwbox").val(this.pwWhenModalOpened);
+        }
+
         // If they click the concrete suggestion in the non-modal, put it in the password field
         fixPWNonModal(): void {
             // Note for later that they have taken a suggestion
@@ -159,7 +165,7 @@ export module UIMisc {
             this.storepw();
             this.$("#discardButton").hide();
             this.$("#keepButton").html("OK");
-            this.$("#myModal").show();
+            this.$("#myModal").modal("show");
         }
 
         // To save computation, only rate the password if it has changed
