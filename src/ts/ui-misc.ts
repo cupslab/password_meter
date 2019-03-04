@@ -9,6 +9,27 @@ import NeuralNetwork = require("./nn-misc");
 import Constants = require("./constants");
 
 export module UIMisc {
+
+    // https://github.com/coolaj86/knuth-shuffle
+    function shuffle(array) {
+        var currentIndex = array.length, temporaryValue, randomIndex;
+
+        // While there remain elements to shuffle...
+        while (0 !== currentIndex) {
+
+            // Pick a remaining element...
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+
+            // And swap it with the current element.
+            temporaryValue = array[currentIndex];
+            array[currentIndex] = array[randomIndex];
+            array[randomIndex] = temporaryValue;
+        }
+
+        return array;
+    }
+
     export class UIMisc {
         helper: Helper.Helper.Helper;
         $: JQueryStatic;
@@ -58,11 +79,76 @@ export module UIMisc {
         // We store this in a global to avoid double-calling the function each time.
         private inCompliance: boolean = false;
 
+        private randomlyOrderedCharClasses: Array<string> = [];
+
         constructor(verboseMode: boolean) {
             var registry = PasswordMeter.PasswordMeter.instance;
             this.helper = registry.getHelper();
             this.$ = registry.getJquery();
             this.verboseMode = verboseMode;
+
+            // shuffle character classes and store for use in requirements feedback
+            // note: we do it here rather than shuffle each time dynamically to avoid
+            // confusing user with constantly changing requirements
+            var charClasses = ["uppercase letter", "lowercase letter", "digit", "symbol"];
+            this.randomlyOrderedCharClasses = shuffle(charClasses);
+            console.log("randomized class ordering: " + this.randomlyOrderedCharClasses.toString());
+        }
+
+        getCharClassStringForCharClassCountReq(): string {
+            var pluralalizedCharClasses = this.randomlyOrderedCharClasses.map(x => x + "s");
+            return pluralalizedCharClasses.join("; ");
+        }
+
+        getCharClassStringForMandatoryCharClassReq(): string {
+
+            var registry = PasswordMeter.PasswordMeter.instance;
+            var config: Config.Config.Config = registry.getConfig();
+            var requirementString = "";
+            for (var i = 0; i < this.randomlyOrderedCharClasses.length; i++) {
+                var charClass = this.randomlyOrderedCharClasses[i];
+                switch (charClass) {
+                    case "uppercase letter":
+                        if (config.classRequire.upperCase) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and an uppercase letter";
+                            } else {
+                                requirementString = "Contain an uppercase letter";
+                            }
+                        }
+                        break;
+                    case "lowercase letter":
+                        if (config.classRequire.lowerCase) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and a lowercase letter";
+                            } else {
+                                requirementString = "Contain a lowercase letter";
+                            }
+                        }
+                        break;
+                    case "digit":
+                        if (config.classRequire.digits) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and a digit";
+                            } else {
+                                requirementString = "Contain a digit";
+                            }
+                        }
+                        break;
+                    case "symbol":
+                        if (config.classRequire.symbols) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and a symbol";
+                            } else {
+                                requirementString = "Contain a symbol";
+                            }
+                        }
+                        break;
+                }
+            }
+
+            // mandatory classes should already be shuffled by design
+            return requirementString;
         }
 
         onReady(): void {
@@ -136,7 +222,7 @@ export module UIMisc {
         }
 
         // They chose to discard their modal-modified password,
-	// so transfer the original password back to the main window
+        // so transfer the original password back to the main window
         discardpw(): void {
             this.$("#pwbox").val(this.pwWhenModalOpened);
         }
@@ -281,6 +367,12 @@ export module UIMisc {
         // It requires the current candidate (pw), the current recursion depth (depth) 
         // to avoid causing lag, and the original version of the password (originalPW)
         generateCandidateFixed(pw: string, depth: number, originalPW: string): number {
+
+            var config = PasswordMeter.PasswordMeter.instance.getConfig();
+            if (!config.provideConcretePasswordSuggestions) {
+                return 1;
+            }
+
             // We keep a vector that tracks changes we make to the password for 
             // future highlighting purposes.
             var deltas: Array<number> = [];
@@ -340,6 +432,10 @@ export module UIMisc {
             // Check the modification's compliance with the password-composition policy
             var currentUsername = this.$("#usernamebox").val() as string;
 
+            if (typeof (this.heuristicMapping[modifiedPW]) === "undefined") {
+                this.queryHeuristicGuessNumber(modifiedPW, currentUsername, false);
+            }
+
             var verified = RuleFunctions.RuleFunctions.verifyMinimumRequirements(modifiedPW, currentUsername);
             if (verified.compliant) {
                 // If it complies with the policy
@@ -356,6 +452,7 @@ export module UIMisc {
                 this.spawnFixedRating(modifiedPW);
                 // If it does not comply, recursively calls itself to try again.
             } else {
+                // console.log("not adding " + modifiedPW + " as a recommended fix for " + originalPW + " because it does not comply with all policy requirements");
                 depth++;
                 if (depth < 8) {
                     this.generateCandidateFixed(pw, depth, originalPW);
@@ -377,6 +474,8 @@ export module UIMisc {
                 this.queryHeuristicGuessNumber(pw, username, false);
                 // To avoid duplicating call when the heuristic function returns
             } else if (nni.getNeuralNetNum(pw) >= 0 && this.heuristicMapping[pw] >= 0) {
+                // console.log("[spawnFixedRating] heuristic mapping for " + pw + " is not undefined and is > 0: " +
+                //     this.heuristicMapping[pw]);
                 this.synthesizeFixed(pw);
             }
         }
@@ -393,6 +492,8 @@ export module UIMisc {
             var changedAnyMappings: boolean = false;
             if (typeof (this.heuristicMapping[fixedpw]) !== "undefined"
                 && this.heuristicMapping[fixedpw] >= 0) {
+                // console.log("[synthesizeFixed] heuristic mapping for " + fixedpw + " is not undefined  and is > 0: " +
+                //     this.heuristicMapping[fixedpw]);
                 numberOfScores++;
                 overallScore = this.heuristicMapping[fixedpw];
             }
@@ -401,6 +502,8 @@ export module UIMisc {
 
             if (typeof (nnNum) !== "undefined"
                 && nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
+                // console.log("nn mapping for " + fixedpw + " is not undefined and  and is > 0: " +
+                //     nnScoreAsPercent);
                 numberOfScores++;
                 if (overallScore === 0
                     || (overallScore > 0 && nnScoreAsPercent < overallScore)) {
@@ -412,6 +515,10 @@ export module UIMisc {
                     + this.heuristicMapping[fixedpw] + ") and neural nets ("
                     + nnScoreAsPercent + ")" + " " + numberOfScores);
             }
+
+            // console.log("potential fixed " + fixedpw + " from heuristic ("
+            //     + this.heuristicMapping[fixedpw] + ") and neural nets ("
+            //     + nnScoreAsPercent + ")" + " " + numberOfScores);
             // When we have a sufficiently strong concrete suggestion, 
             // find all original passwords that include that as a potential fix 
             // and set it as the mapping
@@ -419,6 +526,7 @@ export module UIMisc {
                 if (this.verboseMode) {
                     console.log(fixedpw + " is a plausible fix above the 2/3rds threshold");
                 }
+                // console.log(fixedpw + " is a plausible fix above the 2/3rds threshold");
                 for (var j in this.recommendedFixes) {
                     if (this.recommendedFixes[j] === fixedpw
                         && typeof (this.fixedpwMapping[j]) === "undefined") {
@@ -429,23 +537,28 @@ export module UIMisc {
                             originalOverallScore = this.heuristicMapping[j];
                         }
                         var nnNumFix = nni.getNeuralNetNum(j);
-                        var nnScoreAsPercentFix = this.scaleGuessNumByMeterStringencyFactor(nnNumFix);
+                        var nnScoreAsPercentFix = this.scaleGuessNumByMeterStringencyFactor(nnNumFix); // note: heuristicMapping already scaled in queryHeuristicGuessNumber
                         if (typeof (nnNumFix) !== "undefined"
                             && nnScoreAsPercentFix >= 0
                             && isFinite(nnScoreAsPercentFix)) {
+                            // console.log(fixedpw + ": NN is defined, stringency-scaled NN number is positive and finite");
+                            // if neural less tha heuristic score, then overall score becomes neural score
                             if (originalOverallScore === 0
                                 || (originalOverallScore > 0
                                     && nnScoreAsPercentFix < originalOverallScore)) {
                                 originalOverallScore = nnScoreAsPercentFix;
                             }
                         }
+                        console.log(j + ": delta improvement to overall score: " + (overallScore - originalOverallScore));
                         if (overallScore > (originalOverallScore + 15)) {
                             this.fixedpwMapping[j] = fixedpw;
+                            console.log("mapping " + j + " to " + fixedpw);
                             if (this.verboseMode) {
                                 console.log("mapping " + j + " to " + fixedpw);
                             }
                             changedAnyMappings = true;
                         } else {
+                            console.log("not mapping " + j + " to " + fixedpw + " because it is not enough of an improvement " + originalOverallScore + " --> " + overallScore);
                             if (this.verboseMode) {
                                 console.log("not mapping " + j + " to " + fixedpw + " because it is not enough of an improvement " + originalOverallScore + " --> " + overallScore);
                             }
@@ -474,6 +587,7 @@ export module UIMisc {
                 if (this.verboseMode) {
                     console.log("trying again on " + fixedpw + " as current password is " + currentpw);
                 }
+                console.log("trying again on " + fixedpw + " as current password is " + currentpw);
                 this.generateCandidateFixed(fixedpw, 0, currentpw);
             }
             return 1;
@@ -899,7 +1013,7 @@ export module UIMisc {
                 }
 
                 // Recommend a concrete suggestion if we have one
-                if (typeof (this.fixedpwMapping[pw]) !== "undefined") {
+                if (config.provideConcretePasswordSuggestions && typeof (this.fixedpwMapping[pw]) !== "undefined") {
                     // Change colors to highlight what was modified
                     var coloredFixedPW = "";
                     var whereToColor = this.deltaHighlighted[this.fixedpwMapping[pw]];
@@ -928,10 +1042,12 @@ export module UIMisc {
                     this.$(".portalToGenericAdviceModal").show();
                     // If they already took a concrete suggestion, don't show another
                     if (this.tookSuggestion) {
+                        console.log("already took suggestion for " + pw + " so hiding recs");
                         this.$(".recommended").hide();
                         this.$(".portalToGenericAdviceModal").hide();
                     }
                 } else {
+                    console.log("overall score is above 66 so for " + pw + " so hiding recs");
                     this.$("#nonmodalFeedbackTable").hide();
                     this.$("#modalFeedbackTable").hide();
                     this.$(".recommended").hide();
@@ -962,6 +1078,7 @@ export module UIMisc {
                 this.$("#feedbackHeaderTextModal").html(requirementsHeader + nonCompliantAdmonition);
                 this.$("#nonmodalFeedbackTable").show();
                 this.$(".recommended").hide();
+                // console.log("not show rec for noncompliant password: " + pw);
 
                 // Give text feedback about how they fail to comply with policy
                 var policyGripes = [];
@@ -996,7 +1113,8 @@ export module UIMisc {
             }
 
             // Start trying to generate a concrete suggestion
-            if ((pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2)
+            if (config.provideConcretePasswordSuggestions &&
+                (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2)
                 && minReqObj.compliant && typeof (this.fixedpwMapping[pw]) === "undefined"
                 && overallScore < 100) {
                 this.generateCandidateFixed(pw, 0, pw);

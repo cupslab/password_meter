@@ -97,7 +97,13 @@ export module RuleFunctions {
             } else {
                 thisExplanation = "Use " + minCharacterClasses.toString() + "-" + maxCharacterClasses.toString() + " of the following: ";
             }
-            thisExplanation += "uppercase letters; lowercase letters; digits; symbols";
+
+            if (config.randomizeOrderCharClassRequirement) {
+                var ui = PasswordMeter.PasswordMeter.instance.getUI();
+                thisExplanation += ui.getCharClassStringForCharClassCountReq();
+            } else {
+                thisExplanation += "uppercase letters; lowercase letters; digits; symbols";
+            }
 
             // check
             if (numClasses >= minCharacterClasses && numClasses <= maxCharacterClasses) {
@@ -126,33 +132,39 @@ export module RuleFunctions {
             var thisExplanation = "";
             var compliant = false;
 
-            // explain
-            if (lowercaseLettersRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a lowercase letter";
-                } else {
-                    thisExplanation = "Contain a lowercase letter";
+            if (config.randomizeOrderCharClassRequirement) {
+                var ui = PasswordMeter.PasswordMeter.instance.getUI();
+                thisExplanation += ui.getCharClassStringForMandatoryCharClassReq();
+            } else {
+
+                // explain
+                if (lowercaseLettersRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a lowercase letter";
+                    } else {
+                        thisExplanation = "Contain a lowercase letter";
+                    }
                 }
-            }
-            if (uppercaseLettersRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and an uppercase letter";
-                } else {
-                    thisExplanation = "Contain an uppercase letter";
+                if (uppercaseLettersRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and an uppercase letter";
+                    } else {
+                        thisExplanation = "Contain an uppercase letter";
+                    }
                 }
-            }
-            if (digitsRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a digit";
-                } else {
-                    thisExplanation = "Contain a digit";
+                if (digitsRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a digit";
+                    } else {
+                        thisExplanation = "Contain a digit";
+                    }
                 }
-            }
-            if (symbolsRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a symbol";
-                } else {
-                    thisExplanation = "Contain a symbol";
+                if (symbolsRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a symbol";
+                    } else {
+                        thisExplanation = "Contain a symbol";
+                    }
                 }
             }
 
@@ -510,7 +522,7 @@ export module RuleFunctions {
             var unconservativeNnNum = conservativeNnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.scaleFactor);
 
             if (conservativeNnNum < 0) {
-                console.log("looking up NN guess number: " + pw);
+                console.log("(still) looking up NN guess number: " + pw);
             } else if (conservativeNnNum > minLogNnGuessNum) {
                 compliant = true;
                 console.log("high enough NN guess number: " + pw + " (" + conservativeNnNum +

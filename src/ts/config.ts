@@ -81,6 +81,8 @@ export module Config {
     }
 
     export interface Config {
+        provideConcretePasswordSuggestions: boolean;
+        randomizeOrderCharClassRequirement: boolean;
         colors: ConfigColor;
         symbols: ConfigSymbols;
         remindAgainstReuse: boolean;
@@ -102,6 +104,8 @@ export module Config {
     }
 
     export var passwordMeterDefaultConfig: Config = {
+        provideConcretePasswordSuggestions: true,
+        randomizeOrderCharClassRequirement: true,
         colors: { // display colors
             compliant: "#006600", // by default show completed requirement in green
             noncompliant: "#660000", // by default show outstanding requirement in red
