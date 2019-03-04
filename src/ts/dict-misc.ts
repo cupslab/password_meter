@@ -1,6 +1,5 @@
 import PasswordMeter = require("./PasswordMeter");
 import Helper = require("./helper");
-// import * as BloomFilter from "./bloom-filter-js"; // was also working
 import BloomFilter = require("../js/bloom-filter-js");
 import Config = require("./config");
 import PasswordLeaks = require("../js/hibp-js");
@@ -12,11 +11,11 @@ export module Dictionaries {
 
         namesDict: Dictionary;
         phrasesDict: Dictionary;
-        passwordsDict: Dictionary; // josh: keep around; used in rulefunction.ts commonPwCheck()
+        passwordsDict: Dictionary; // used in rulefunction.ts commonPwCheck()
         englishwordsDict: Dictionary;
         wikipediaDict: Dictionary;
         petnames: Dictionary;
-        blacklistDict: Dictionary; // josh: use this for blacklist rule, not passwordsDict
+        blacklistDict: Dictionary;
         blacklistBloom: BloomFilter.BloomFilter;
         leaks: PasswordLeaks.PasswordLeaks;
 

@@ -4,12 +4,8 @@
 // LZString for LZString
 // optional passwordMeterConfig for configuration
 
-
-
 import JQuery = require("jquery");
 import LZString = require("lz-string");
-//potentialTODO bootstrap has infected jquery already
-//import Bootstrap = require("bootstrap");
 import Helper = require("./helper");
 import Config = require("./config");
 import Dictionaries = require("./dict-misc");
@@ -84,7 +80,7 @@ export module PasswordMeter {
             getBootstrap():Bootstrap {
                 return this.data["bootstrap"];
             }
-            */
+        */
     }
 
     export var instance = new Registry();

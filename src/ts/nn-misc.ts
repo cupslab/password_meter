@@ -81,7 +81,6 @@ export module NeuralNetwork {
     // When it returns, it will display the rating (update the UI).
     function nnCallback(result: number, password: string): void {
         postProcessNnNumAndCache(result, password);
-
         var UI = PasswordMeter.PasswordMeter.instance.getUI();
         UI.displayRating(password);
     }
@@ -90,7 +89,6 @@ export module NeuralNetwork {
     // concrete suggestions for a better password
     export function nnFixedCallback(result: number, password: string): void {
         postProcessNnNumAndCache(result, password);
-
         var UI = PasswordMeter.PasswordMeter.instance.getUI();
         UI.synthesizeFixed(password);
     }

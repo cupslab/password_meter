@@ -29,7 +29,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// https://github.com/mehdibo/hibp-js (with additional tweaks for meter)
+// based on https://github.com/mehdibo/hibp-js (with additional tweaks for meter/user study)
 
 class PasswordLeaks {
 
@@ -67,9 +67,9 @@ class PasswordLeaks {
     }
 
     hibpCheck(pwd){
-	// We hash the pwd first
 	var that = this;
-	this.sha1(pwd).then(function(hash, self){
+	// We hash the pwd first
+	this.sha1(pwd).then(function(hash){
             // We send the first 5 chars of the hash to hibp's API
             const req = new XMLHttpRequest();
             req.addEventListener("load", function(){
@@ -78,7 +78,6 @@ class PasswordLeaks {
 		const resp = this.responseText.split('\n');
 		const hashSub = hash.slice(5).toUpperCase();
 		var wasLeakedResult = 0;
-
 		
 		for (var index = 0; index < resp.length; index++){
                     // Check if the line matches the rest of the hash
@@ -91,15 +90,13 @@ class PasswordLeaks {
 		}
 		// Trigger an event with the result
 		that.updateHibpCache(pwd, wasLeakedResult);
-
             });
-            req.open('GET', 'https://api.pwnedpasswords.com/range/'+hash.substr(0, 5));
+            req.open('GET', 'https://api.pwnedpasswords.com/range/' + hash.substr(0, 5));
             req.send();
 	});
     }    
 
     previouslyLeaked(pwd) {
-
 	if (typeof(this.hibpCache[pwd])==="undefined") {
 	    this.hibpCache[pwd] = -1; // signal that we're finding out
 	    this.hibpTimings[pwd] = Date.now();
@@ -111,7 +108,6 @@ class PasswordLeaks {
 	} else {
 	    return this.hibpCache[pwd] === 1;
 	}
-	
     }
 }
 
