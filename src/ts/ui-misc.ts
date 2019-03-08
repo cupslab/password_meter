@@ -97,6 +97,10 @@ export module UIMisc {
             this.randomlyOrderedCharClasses = shuffle(charClasses);
         }
 
+        getRandomlyOrderedCharClasses() {
+            return this.randomlyOrderedCharClasses;
+        }
+
         // return randomly-ordered list of all 4 character classes, as string
         getCharClassStringForCharClassCountReq(): string {
             var pluralalizedCharClasses = this.randomlyOrderedCharClasses.map(x => x + "s");
@@ -1007,7 +1011,12 @@ export module UIMisc {
                         }
                     }
 
-                    this.$(".fixedPW").html(coloredFixedPW).trigger("change");
+                    // if we have actually showed the user a concrete password suggestion
+                    // (if they clicked 'show password with our improvements' or clicked to show
+                    //  their password in plaintext on the screen), then trigger an event
+                    if (this.$("#showHidePWNonModal").prop("checked") === true) {
+                        this.$(".fixedPW").html(coloredFixedPW).trigger("change");
+                    }
                     // If we don't yet have a concrete suggestion
                 } else {
                     this.$(".recommended").hide();
