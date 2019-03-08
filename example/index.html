@@ -326,7 +326,7 @@ var ui = PasswordMeter.getUI();
                 <div class="portalToGenericAdviceModal portalToGenericAdviceModalColor" style="display:none" onclick="$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);" data-target="#myModalGeneric">How to make strong passwords</div>
             </div>
             <div class="modal-footer">
-                <button type="button" id="discardButton" class="buttonLayout buttonColoring" data-dismiss="modal" style="display: none; margin-right: 10px;" onClick="ui.discardpw();ui.spawnRating();">Cancel</button>
+                <button type="button" id="discardButton" class="buttonLayout buttonColoring" data-dismiss="modal" style="display: none; margin-right: 10px;" onClick="ui.discardpw();ui.displayRating($('#pwbox').val());">Cancel</button>
                 <button type="button" id="keepButton" class="buttonLayout buttonColoring" data-dismiss="modal" onclick="ui.keeppw();">Ok</button>
             </div>
         </div>
