@@ -3,6 +3,7 @@ import JQuery = require("jquery");
 import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import BloomFilter = require("../js/bloom-filter-js");
+import Config = require("./config");
 
 export module Helper {
     interface MatchFoo {
@@ -94,6 +95,14 @@ export module Helper {
             var dict: { [key: string]: boolean } = {};
             var fLZString = this.LZString;
             var fBuildDict = this.buildDict;
+
+            var registry = PasswordMeter.PasswordMeter.instance;
+            var config: Config.Config.Config = registry.getConfig();
+            var staticPrefix: string = config.staticUrlPrefix;
+            if (staticPrefix !== "") {
+                path = staticPrefix + path;
+            }
+
             this.$.get(path, function(s) {
                 var decompressed = fLZString.decompressFromEncodedURIComponent(s);
                 var words: Array<string> = decompressed.split(",");
@@ -122,6 +131,13 @@ export module Helper {
             var startTime = Date.now();
             var substringsAdded = 0;
             var fLZString = this.LZString;
+
+            var registry = PasswordMeter.PasswordMeter.instance;
+            var config: Config.Config.Config = registry.getConfig();
+            var staticPrefix: string = config.staticUrlPrefix;
+            if (staticPrefix !== "") {
+                path = staticPrefix + path;
+            }
 
             this.$.get(path, function(s) {
 
