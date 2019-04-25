@@ -10,7 +10,7 @@ export module RuleFunctions {
         explanation: { [key: string]: string };
     }
 
-    interface VerifyResult {
+    export interface VerifyResult {
         compliant: boolean;
         detail: ResultsDetail;
     }
@@ -304,10 +304,7 @@ export module RuleFunctions {
             // report (note that we are only complaining about disallowed passwords if they use one)
             if (!compliant) {
                 thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
-                var helper = PasswordMeter.PasswordMeter.instance.getHelper();
-                helper.$("#pwbox").trigger("blacklistedpassword",
-                    [pw, (new Date()).getTime()]);
-                alert("blacklisted: " + pw);
+
             }
 
             if (!compliant) {
