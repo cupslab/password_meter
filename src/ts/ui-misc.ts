@@ -897,7 +897,7 @@ export module UIMisc {
                 this.inCompliance = true;
                 if (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2) {
                     console.log(minReqObj.detail);
-                    this.displayBar(overallScore, true, pw, JSON.stringify(minReqObj.detail.compliance));
+                    this.displayBar(overallScore, true, pw, minReqObj.detail.compliance);
                 }
                 this.$(".detailedFeedback").show();
 
@@ -1060,7 +1060,7 @@ export module UIMisc {
                 this.inCompliance = false;
                 if (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2) {
                     console.log(minReqObj.detail);
-                    this.displayBar(overallScore, false, pw, JSON.stringify(minReqObj.detail.compliance));
+                    this.displayBar(overallScore, false, pw, minReqObj.detail.compliance);
                 }
                 // Don't let them confirm a non-compliant password
                 this.$("#confirmpw").hide();
@@ -1126,7 +1126,7 @@ export module UIMisc {
         // to display the bar in color or no (false) to display the bar in grayscale 
         // until the requirements have been met.
         displayBar(score: number, metRequirements: boolean, pw: string,
-            compliance: string): void {
+            compliance: { [key: string]: boolean }): void {
             // Adjust score if outside the range
             if (score < 0) {
                 score = 0;
@@ -1162,7 +1162,7 @@ export module UIMisc {
             // Display bar in main window
             this.$("#cups-passwordmeter-span").css("width", Math.round(298 * score / 100).toString() + "px");
             // alert(compliance.toString());
-            this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger("change", [score.toString(), heuristicScore, nnNumScore, heuristicLogGuessNum, conservativeNnLogGuessNum, "cheeto was here"]);
+            this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger("change", [score.toString(), heuristicScore, nnNumScore, heuristicLogGuessNum, conservativeNnLogGuessNum, compliance]);
 
             // display bar in modal
             this.$("#cups-passwordmeter-span-modal").css("width", Math.round(298 * score / 100).toString() + "px");

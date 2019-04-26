@@ -10,7 +10,7 @@ export module RuleFunctions {
         explanation: { [key: string]: string };
     }
 
-    export interface VerifyResult {
+    interface VerifyResult {
         compliant: boolean;
         detail: ResultsDetail;
     }
