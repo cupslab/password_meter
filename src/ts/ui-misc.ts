@@ -896,7 +896,6 @@ export module UIMisc {
             if (minReqObj.compliant) {
                 this.inCompliance = true;
                 if (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2) {
-                    console.log(minReqObj.detail);
                     this.displayBar(overallScore, true, pw, minReqObj.detail.compliance);
                 }
                 this.$(".detailedFeedback").show();
@@ -1059,7 +1058,6 @@ export module UIMisc {
             } else {
                 this.inCompliance = false;
                 if (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2) {
-                    console.log(minReqObj.detail);
                     this.displayBar(overallScore, false, pw, minReqObj.detail.compliance);
                 }
                 // Don't let them confirm a non-compliant password
