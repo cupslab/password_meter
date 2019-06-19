@@ -72,6 +72,11 @@ export module PasswordMeter {
             return this.data["nn"];
         }
 
+        debugNN(summaryOnly: boolean): void {
+            var currentPwd = this.getJquery()("#pwbox").val() as string;
+            this.data["nn"].debugNN(currentPwd, !summaryOnly);
+        }
+
         /* bootstrap apparently infects jquery
             setBootstrap(bootstrap:Bootstrap):void {
                 this.data["bootstrap"] = bootstrap;

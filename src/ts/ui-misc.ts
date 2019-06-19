@@ -878,6 +878,9 @@ export module UIMisc {
                     ", NN score: " + nnScoreAsPercent.toFixed(2) +
                     ", heuristic score: " + heuristicScore.toFixed(2) +
                     ", overall score: " + overallScore.toFixed(2) + "]");
+
+                // print debug info
+                nni.debugNN(pw, false);
             }
 
             // Avoid errors in case the feedback mapping was somehow screwed up

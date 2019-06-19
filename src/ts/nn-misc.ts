@@ -5,6 +5,11 @@ import Config = require("./config");
 declare class NeuralNetworkClient {
     constructor(cb: (n: number, s: string) => void, config: Config.Config.ConfigNeuralNetwork);
     query_guess_number(pw: string): void;
+    raw_predict_next(s: string): void;
+    predict_next(s: string): void;
+    debug_pwd_prob(s: string): void;
+    debug_pwd_guess_num(s: string): void;
+    debug_next_char(s: string, verbose: boolean): void;
 }
 
 export module NeuralNetwork {
@@ -12,7 +17,6 @@ export module NeuralNetwork {
     var neverHeardFromNN = true;
 
     // mapping of passwords to score based on neural networks
-    // TODO(josh): use Least Recently Used cache so mapping doesn't grow too large
     var neuralNetMapping: { [key: string]: number } = {};
 
     // Helper function designed to post-process neural network guess numbers
@@ -123,6 +127,11 @@ export module NeuralNetwork {
             } else {
                 this.nn.query_guess_number(pw);
             }
+        }
+
+        public debugNN(pw: string, verbose: boolean) {
+            this.nn.debug_pwd_prob(pw);
+            this.nn.debug_next_char(pw, verbose);
         }
     }
 
