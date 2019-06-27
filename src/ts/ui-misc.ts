@@ -856,7 +856,7 @@ export module UIMisc {
                 }
                 var nnNum = nni.getNeuralNetNum(pw);
                 var config: Config.Config.Config = PasswordMeter.PasswordMeter.instance.getConfig();
-                var unscaledNnNum = nnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.scaleFactor);
+                var unscaledNnNum = nnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.guessNumScaleFactor);
                 var nnScoreAsPercent = this.scaleGuessNumByMeterStringencyFactor(nnNum);
                 if (typeof (nnNum) !== "undefined"
                     && nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
@@ -879,9 +879,10 @@ export module UIMisc {
                     ", heuristic score: " + heuristicScore.toFixed(2) +
                     ", overall score: " + overallScore.toFixed(2) + "]");
 
-                // print debug info
-                nni.debugNN(pw, false);
+		// print debug info
+		nni.debugNN(pw, false);
             }
+
 
             // Avoid errors in case the feedback mapping was somehow screwed up
             if (typeof (this.feedbackMapping[pw]) === "undefined") {
