@@ -129,7 +129,7 @@ export module NeuralNetwork {
         }
 
         public debugNN(pw: string, verbose: boolean) {
-	    this.nn.debug_password_prob(pw);
+            this.nn.debug_password_prob(pw);
             this.nn.debug_next_char(pw, verbose);
         }
     }
@@ -144,7 +144,8 @@ export module NeuralNetwork {
         var instance = new NeuralNetworkInterface(nn, nnFixed);
         registry.setNN(instance);
 
-	// initial NN debug message
-	instance.debugNN("", false);
+        // initial NN debug message
+        instance.debugNN("", false);
+        console.log("To view all next char probabilities, use: PasswordMeter.debugNN()");
     }())
 }
