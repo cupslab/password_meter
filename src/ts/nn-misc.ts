@@ -6,6 +6,7 @@ declare class NeuralNetworkClient {
     constructor(cb: (n: number, s: string) => void, config: Config.Config.ConfigNeuralNetwork);
     query_guess_number(pw: string): void;
     predict_next(s: string): void;
+    debug_prefix_prob(s: string): void;
     debug_password_prob(s: string): void;
     debug_password_guess_num(s: string): void;
     debug_next_char(s: string, verbose: boolean): void;
@@ -129,6 +130,7 @@ export module NeuralNetwork {
         }
 
         public debugNN(pw: string, verbose: boolean) {
+            this.nn.debug_prefix_prob(pw);
             this.nn.debug_password_prob(pw);
             this.nn.debug_next_char(pw, verbose);
         }
