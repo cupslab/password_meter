@@ -2,7 +2,7 @@ import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import Helper = require("./helper");
 import Constants = require("./constants");
-import NeuralNetwork = require("./nn-misc");
+import BlacklistImport = require("./blacklist");
 
 export module RuleFunctions {
     interface ResultsDetail {
@@ -18,7 +18,7 @@ export module RuleFunctions {
     export function verifyMinimumRequirements(pw: string, username: string): VerifyResult {
         var registry = PasswordMeter.PasswordMeter.instance;
         var config: Config.Config.Config = registry.getConfig();
-        var dictionaries = registry.getDictionaries();
+        var blacklists = registry.getBlacklists();
 
         var compliantColor = config.colors.compliant;
         var noncompliantColor = config.colors.noncompliant;
@@ -294,7 +294,7 @@ export module RuleFunctions {
                     stringToCheck = stringToCheck.toLowerCase();
                 }
 
-                isBlacklisted = dictionaries.blacklistRejects(stringToCheck);
+                isBlacklisted = blacklists.blacklistRejects(stringToCheck);
             }
 
             compliant = !isBlacklisted ||
@@ -473,7 +473,7 @@ export module RuleFunctions {
             var compliant = false;
             var thisExplanation = "";
 
-            if (pw.length < config.prohibitKnownLeaked.smallestLength || !dictionaries.previouslyLeaked(pw)) {
+            if (pw.length < config.prohibitKnownLeaked.smallestLength || !blacklists.previouslyLeaked(pw)) {
                 compliant = true;
             } else {
                 compliant = false;

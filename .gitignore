@@ -1,3 +1,6 @@
 src/node_modules
 src/package-lock.json
 src/PasswordMeter.js
+
+# emacs temp files
+*~

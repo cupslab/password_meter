@@ -4,11 +4,11 @@
 // LZString for LZString
 // optional passwordMeterConfig for configuration
 
-import JQuery = require("jquery");
 import LZString = require("lz-string");
 import Helper = require("./helper");
 import Config = require("./config");
 import Dictionaries = require("./dict-misc");
+import BlacklistImport = require("./blacklist");
 import UIMisc = require("./ui-misc");
 import NeuralNetwork = require("./nn-misc");
 
@@ -54,6 +54,14 @@ export module PasswordMeter {
 
         getDictionaries(): Dictionaries.Dictionaries.Dictionaries {
             return this.data["dictionaries"];
+        }
+
+        setBlacklists(blacklists: BlacklistImport.BlacklistModule.Blacklists) {
+            this.data["blacklists"] = blacklists;
+        }
+
+        getBlacklists(): BlacklistImport.BlacklistModule.Blacklists {
+            return this.data["blacklists"];
         }
 
         setUI(ui: UIMisc.UIMisc.UIMisc) {
