@@ -69,10 +69,16 @@ export module Config {
     }
 
     export interface ConfigNeuralNetwork { // raise visibility because we pass it on to a dependency
+        modelName: string;
+        modelPathPrefix: string;
+        guessNumScaleFactor: number;
+        cacheSize: number;
+        passwordEndChar: string;
+        postProcessUppercasePredictability: boolean;
+        // the following are only used in the NeoCortex-based JavaScript NN (not in TensorflowJS)
         intermediate: string;
         file: string;
         zigzag: boolean;
-        guessNumScaleFactor: number;
     }
 
     export interface Config {
@@ -81,7 +87,7 @@ export module Config {
         colors: ConfigColor;
         symbols: ConfigSymbols;
         remindAgainstReuse: boolean;
-        ignoredWords: Array<string>; // list of words that should count for nothing in the password
+        domainSpecificWords: Array<string>;
         length: ConfigLength;
         classCount: ConfigClassCount;
         classRequire: ConfigClassBoolean;
@@ -95,6 +101,8 @@ export module Config {
         blacklist: ConfigBlacklist;
         neuralNetworkConfig: ConfigNeuralNetwork;
         staticUrlPrefix: string;
+        barFillStringencyScaleFactor: number;
+        minNnScoreToInfluenceBar: number;
     }
 
     export var passwordMeterDefaultConfig: Config = {
@@ -109,7 +117,7 @@ export module Config {
             noncompliant: "&#x2751; ", // LOWER RIGHT SHADOWED WHITE SQUARE
         },
         remindAgainstReuse: true, // true to emphasize *not* reusing passwords
-        ignoredWords: ["mechanical", "amazon", "mturk", "turk", "survey", "bonus", "qualtrics", "study", "carnegie", "mellon", "university"],
+        domainSpecificWords: ["mechanical", "amazon", "mturk", "turk", "survey", "bonus", "qualtrics", "study", "carnegie", "mellon", "university"],
         length: {
             active: true,
             minLength: 8,
@@ -170,11 +178,19 @@ export module Config {
             lengthException: 20,
         },
         neuralNetworkConfig: {
-            intermediate: "basic_3M.info_and_guess_numbers.no_bloomfilter.json",
-            file: "basic_3M.weight_arch.quantized.fixed_point1000.zigzag.nospace.json",
-            zigzag: true,
+            modelName: "1c8",
+            modelPathPrefix: "tfjs_1c8",
             guessNumScaleFactor: 300,
+            cacheSize: 1000,
+            passwordEndChar: "\n",
+            postProcessUppercasePredictability: false,
+            // for PGS++ NN models
+            intermediate: "",
+            file: "",
+            zigzag: false,
         },
         staticUrlPrefix: "",
+        barFillStringencyScaleFactor: 67 / 12, // 2/3 (~67%) of meter should represent 10^12
+        minNnScoreToInfluenceBar: 15
     };
 }

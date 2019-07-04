@@ -2,7 +2,6 @@ import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import Helper = require("./helper");
 import Constants = require("./constants");
-import BlacklistImport = require("./blacklist");
 
 export module RuleFunctions {
     interface ResultsDetail {
@@ -1508,13 +1507,13 @@ export module RuleFunctions {
         var matchedSubstrings = new Array();
 
         pw = pw.toLowerCase();
-        const blacklistedSubstrings = Constants.Constants.blacklistedSubstrings;
-        for (var i = 0; i < blacklistedSubstrings.length; i++) {
-            while (pw.indexOf(blacklistedSubstrings[i]) != -1) {
-                matchedSubstrings.push(blacklistedSubstrings[i]);
+        const commonSubstrings = Constants.Constants.commonSubstrings;
+        for (var i = 0; i < commonSubstrings.length; i++) {
+            while (pw.indexOf(commonSubstrings[i]) != -1) {
+                matchedSubstrings.push(commonSubstrings[i]);
                 // put a space in there since no substrings contain one
                 // potentialTODO why not a nonprinting char?
-                pw = pw.replace(blacklistedSubstrings[i], " ");
+                pw = pw.replace(commonSubstrings[i], " ");
             }
         }
 
@@ -1580,8 +1579,7 @@ export module RuleFunctions {
         }
     }
 
-    // note: this is unrelated to the blacklist requirement specified in config
-    interface BlacklistComment {
+    interface DomainSpecificWordsUsageComment {
         length: number;
         reasonWhy: string;
         publicText: string;
@@ -1589,41 +1587,50 @@ export module RuleFunctions {
         problemText: string;
         remaining: string;
     }
-    export function blacklist(pw: string): BlacklistComment {
+    export function generateDomainSpecificWordsUsageComment(pw: string): DomainSpecificWordsUsageComment {
         /* this function should, given a password and a set of site-specific words,
         return the number of characters in the password that are on that list of words */
 
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
         var helper = PasswordMeter.PasswordMeter.instance.getHelper();
-        // potentialTODO by config it's not a blacklist, rather a list of ignored words
-        var blacklistedWords = config.ignoredWords;
+
+        var domainSpecificWords = config.domainSpecificWords;
 
         var publicText = "";
         var sensitiveText = "";
         var problemText = "";
         var reasonWhy = "";
-        var remaining = pw; // the password with any blacklisted content, if any, removed
+        var remaining = pw; // the password with any domain-specifc words removed
 
         var wordsTheyShouldNotHaveUsed: Array<string> = [];
         var NONALPHA = new RegExp("[^A-Za-z]");
-        // lowercase and split the password:
+
+        // lowercase and split the password
         pw = pw.toLowerCase();
-        pw = pw.replace(/[-_ ]/g, ""); // remove characters that could delimit words
-        //20mostCommon var pwParts = pw.split(/[^a-z012345!&@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
-        var pwParts = pw.split(/[^a-z01345@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
-        pwParts = pwParts.filter(function(e) {
+        // remove characters that could delimit words	
+        pw = pw.replace(/[-_ ]/g, "");
+
+        // split password into parts that might contain dictionary
+        // words post-substitution; discard non-letters that won't be
+        // reverse substituted
+        var pwParts = pw.split(/[^a-z01345@$]+/);
+        pwParts = pwParts.filter(function(e) { // this removes empty strings, etc.
             return e
-        }); // this removes empty strings, etc.
-        var listofSS = pwParts.listSubstringsMinMax(1, undefined); // returns substrings in descending order of length
+        });
+
+        // returns substrings in descending order of length	
+        var listofSS = pwParts.listSubstringsMinMax(1, undefined);
 
         var i = 0; // loop variable that we will sometimes reset when we re-populate this list
         while (i < listofSS.length) {
             var foundMatch = "";
 
             var variantsToLookUp = new Array<Helper.Helper.Alternate>();
-            // potentialTODO magic number 14
+
             // don't try common substitutions for long passwords; the number of variants
             // adds up and may cause the code to hang
+            //
+            // potentialTODO magic number 14
             if (listofSS[i].match(NONALPHA) && pw.length <= 14) {
                 variantsToLookUp = helper.commonSubstitutions(listofSS[i]);
 
@@ -1637,7 +1644,7 @@ export module RuleFunctions {
             for (var z = 0; z < variantsToLookUp.length; z++) {
                 var currentVariant = variantsToLookUp[z].candidate;
                 // in each case, look up the variant, but push the unedited text back to the user
-                if (blacklistedWords.indexOf(currentVariant) > -1) {
+                if (domainSpecificWords.indexOf(currentVariant) > -1) {
                     wordsTheyShouldNotHaveUsed.push(listofSS[i]);
                     foundMatch = listofSS[i];
                 }
@@ -1650,8 +1657,10 @@ export module RuleFunctions {
                 // remove the matched substring from password parts.
                 for (var z = 0; z < pwParts.length; z++) {
                     var ssLocation = pwParts[z].indexOf(foundMatch);
-                    if (ssLocation > -1) { // remove; leave remainder of string
-                        pwParts.splice(z, 1, pwParts[z].substring(0, ssLocation), pwParts[z].substring(ssLocation + foundMatch.length));
+                    if (ssLocation > -1) {
+                        // remove; leave remainder of string
+                        pwParts.splice(z, 1, pwParts[z].substring(0, ssLocation),
+                            pwParts[z].substring(ssLocation + foundMatch.length));
                         pwParts = pwParts.filter(function(e) {
                             return e
                         });
@@ -1682,7 +1691,8 @@ export module RuleFunctions {
                             wordsTheyShouldNotHaveUsed[i].length);
                 }
             }
-            sensitiveText = "Don't use site-specific terms (" + Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString() + ")";
+            sensitiveText = "Don't use site-specific terms (" +
+                Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString() + ")";
             reasonWhy = "Attackers target their attacks to words used on a particular service";
         }
 

@@ -53,21 +53,29 @@ export module NeuralNetwork {
         return Math.log(x) / Math.LN10;
     }
 
-    // 1. if NN num is a finite number but negative or 0, map to log10(1.1) ~= 0.04
-    // 2. as long as password is not empty string (""), if NN is +infinity, then map to 100 percent
-    //    (due to NN bug, empty string maps to positive +infinity also; don't map to 100 for that case)
-    // 3. if NN is not a number
     function postProcessNnNumAndCache(result: number, password: string): void {
-        result = result * uppercasePredictabilityPostProcessing(password);
-        neverHeardFromNN = false;
-        var value = log10(result);
 
-        // With estimates, we can get fractional/negative guess numbers
-        // for terrible passwords, so compensate to have a very small number
-        if (result <= 1) {
-            value = log10(1.1);
+        var config = PasswordMeter.PasswordMeter.instance.getConfig();
+        if (config.neuralNetworkConfig.postProcessUppercasePredictability) {
+            // PGS3 NN models do not need uppercase predictability post-processing,
+            // only PGS++ models
+            result = result * uppercasePredictabilityPostProcessing(password);
         }
-        // Neural nets give infinity for empty passwords, hence check length
+
+        neverHeardFromNN = false;
+
+        var value: number;
+        if (result <= 1) {
+            value = 0;
+        } else {
+            value = log10(result);
+        }
+
+        // Neural nets give infinity for empty passwords, hence check
+        // length. as long as password is not empty string (""), if NN
+        // is +infinity, then map to 100 percent (due to NN bug, empty
+        // string maps to positive +infinity also; don't map to 100
+        // for that case)
         if (password.length > 0 && result == Number.POSITIVE_INFINITY) {
             value = 100;
         }

@@ -1,12 +1,8 @@
-import Dictionaries = require("./dict-misc");
 import Helper = require("./helper");
-import JQuery = require("jquery");
-import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import RuleFunctions = require("./rulefunctions");
 import NeuralNetwork = require("./nn-misc");
-import Constants = require("./constants");
 
 export module UIMisc {
 
@@ -325,8 +321,12 @@ export module UIMisc {
         // translate NN/heuristic guess number to a percentage-based score (based on meter
         // stringency configuration). this will influence meter fill.
         scaleGuessNumByMeterStringencyFactor(guessNum: number): number {
+            var registry = PasswordMeter.PasswordMeter.instance;
+            var config: Config.Config.Config = registry.getConfig();
+            var stringencyScaleFactor: number = config.barFillStringencyScaleFactor;
+
             if (guessNum > 0) {
-                return guessNum * Constants.Constants.METER_STRINGENCY_SCALE_FACTOR;
+                return guessNum * stringencyScaleFactor;
             } else {
                 return guessNum;
             }
@@ -336,8 +336,12 @@ export module UIMisc {
         // (for NN scores, the resulting NN guess num is conservative; the
         // meter has divided the guess number by a scaling factor)
         unscaleScoreIntoLogGuessNum(score: number): number {
+            var registry = PasswordMeter.PasswordMeter.instance;
+            var config: Config.Config.Config = registry.getConfig();
+            var stringencyScaleFactor: number = config.barFillStringencyScaleFactor;
+
             if (score > 0) {
-                return score / Constants.Constants.METER_STRINGENCY_SCALE_FACTOR;
+                return score / stringencyScaleFactor;
             } else {
                 return score;
             }
@@ -626,7 +630,7 @@ export module UIMisc {
         //	the bar when done calculating
         //  *false indicates we are rating a candidate concrete suggestion
         queryHeuristicGuessNumber(pw: string, username: string, primaryPassword: boolean): void {
-            // We overwrite the password if they use contextual or blacklisted content
+            // We overwrite the password if they use contextual or domain-specific content
             // and we need the original to make the correct mappings
             var originalPW = pw;
             var publictips: Array<string> = [];
@@ -641,9 +645,9 @@ export module UIMisc {
             if (typeof (pw) === "undefined") {
                 pw = "";
             }
-            var blacklistObj = RuleFunctions.RuleFunctions.blacklist(pw);
-            pw = blacklistObj.remaining;
-            // If their whole password is blacklisted, we hit a type error
+            var domainSpecificObj = RuleFunctions.RuleFunctions.generateDomainSpecificWordsUsageComment(pw);
+            pw = domainSpecificObj.remaining;
+            // If their whole password is domain-specific, we hit a type error
             if (typeof (pw) === "undefined") {
                 pw = "";
             }
@@ -669,8 +673,12 @@ export module UIMisc {
             var dictionaryCheckObj = RuleFunctions.RuleFunctions.combinedDictCheck(pw);
             var substringArrayNoFilter = pw.listSubstringsNoFilter(4);
             var commonpwObj = RuleFunctions.RuleFunctions.commonPwCheck(substringArrayNoFilter);
-            // Take the coefficients from our regression
-            var coefficients = [1.530, 0.3129, 0.9912, 0.04637, -0.03885, -0.1172, -0.2976, -0.0008581, -0.3008, -0.5566, 0, 0.9108, 0.7369, 0.7578, 0, -0.1213, -0.2402, -0.1364, -0.5534, 1.927, 0.001496, -0.3946];
+            // Take the coefficients from our regression of min-auto on 21 heuristic features
+            // (corresponding to subscores elements)
+            var coefficients = [1.530, 0.3129, 0.9912, 0.04637,
+                -0.03885, -0.1172, -0.2976, -0.0008581, -0.3008, -0.5566,
+                0, 0.9108, 0.7369, 0.7578, 0, -0.1213, -0.2402, -0.1364,
+                -0.5534, 1.927, 0.001496, -0.3946];
             var subscores: Array<number> = [1, lenObj.length, classObj.count, duplicatedObj.count,
                 repeatObj.count, patternsObj.score, sequenceObj.count, structureObj.score,
                 upperPredictableObj.score, digitsPredictableObj.score, symbolsPredictableObj.score,
@@ -679,17 +687,17 @@ export module UIMisc {
                 dictionaryCheckObj.dictionaryTokens, dictionaryCheckObj.substitutionCommonness,
                 commonpwObj.length];
             // The first value is the intercept
-            var overallScore = coefficients[0];
+            var overallHeuristicScore = coefficients[0];
             // Take the remaining coefficients and multiply by the rule function score
             for (var i = 1; i < coefficients.length; i++) {
-                overallScore += coefficients[i] * subscores[i];
+                overallHeuristicScore += coefficients[i] * subscores[i];
             }
-            overallScore = this.scaleGuessNumByMeterStringencyFactor(overallScore);
+            overallHeuristicScore = this.scaleGuessNumByMeterStringencyFactor(overallHeuristicScore);
 
-            if (overallScore < (pw.length / 2)) {
-                overallScore = pw.length / 2;
-            } else if (overallScore > 100) {
-                overallScore = 100;
+            if (overallHeuristicScore < (pw.length / 2)) {
+                overallHeuristicScore = pw.length / 2; // this is heuristics-based, after all
+            } else if (overallHeuristicScore > 100) {
+                overallHeuristicScore = 100;
             }
 
             // Save non-empty text feedback from the rule functions
@@ -699,11 +707,11 @@ export module UIMisc {
                 reasonWhy.push(contextualObj.reasonWhy);
                 problemText.push(contextualObj.problemText);
             }
-            if (blacklistObj.publicText.length > 0) {
-                publictips.push(blacklistObj.publicText);
-                sensitivetips.push(blacklistObj.sensitiveText);
-                reasonWhy.push(blacklistObj.reasonWhy);
-                problemText.push(blacklistObj.problemText);
+            if (domainSpecificObj.publicText.length > 0) {
+                publictips.push(domainSpecificObj.publicText);
+                sensitivetips.push(domainSpecificObj.sensitiveText);
+                reasonWhy.push(domainSpecificObj.reasonWhy);
+                problemText.push(domainSpecificObj.problemText);
             }
             if (dictionaryCheckObj.publicText.length > 0
                 && !this.redundant(dictionaryCheckObj.problemText, problemText)) {
@@ -808,8 +816,8 @@ export module UIMisc {
                 reasonWhy.push(structureObj.reasonWhy);
             }
 
-            // Save the mapping of password to score
-            this.heuristicMapping[originalPW] = overallScore;
+            // Save the mapping of password to heuristic score
+            this.heuristicMapping[originalPW] = overallHeuristicScore;
             // Save the mapping of password to feedback
             this.feedbackMapping[originalPW] = JSON.stringify({
                 publictips1: publictips[0],
@@ -843,46 +851,58 @@ export module UIMisc {
         // Update all aspects of the UI (bar and text feedback) to reflect password. 
         // Note that the password score and feedback was generated + cached in other functions.
         displayRating(pw: string): void {
+            var config: Config.Config.Config = PasswordMeter.PasswordMeter.instance.getConfig();
             var nni = PasswordMeter.PasswordMeter.instance.getNN();
-            var overallScore = 0;
+
             var numberOfScores = 0;
+            var overallScore = 0;
+
             var heuristicScore = this.heuristicMapping[pw];
 
-            if (pw.length > 0) {
-                if (typeof (heuristicScore) !== "undefined"
-                    && heuristicScore >= 0) {
-                    overallScore = heuristicScore;
-                    numberOfScores++;
-                }
-                var nnNum = nni.getNeuralNetNum(pw);
-                var config: Config.Config.Config = PasswordMeter.PasswordMeter.instance.getConfig();
-                var unscaledNnNum = nnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.guessNumScaleFactor);
-                var nnScoreAsPercent = this.scaleGuessNumByMeterStringencyFactor(nnNum);
-                if (typeof (nnNum) !== "undefined"
-                    && nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
-                    numberOfScores++;
-                    if (overallScore == 0 || (overallScore > 0
-                        && nnScoreAsPercent < overallScore)) {
-                        overallScore = nnScoreAsPercent;
-                    }
-                }
-            }
+            var nnNum = nni.getNeuralNetNum(pw);
+            var unscaledNnNum = nnNum +
+                NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.guessNumScaleFactor);
+            var nnScore = this.scaleGuessNumByMeterStringencyFactor(nnNum);
 
-            if (overallScore < pw.length / 2) {
-                overallScore = pw.length / 2; // make people see at least some progess is happening
+            if (pw.length > 0) {
+
+                if (typeof (heuristicScore) !== "undefined" && heuristicScore >= 0) {
+                    numberOfScores++;
+                }
+                if (typeof (nnNum) !== "undefined" && nnScore >= 0 && isFinite(nnScore)) {
+                    numberOfScores++;
+                }
+
+                // if the min length requirement hasn't been met, the NN score will be 0;
+                // use a length-based score metric instead
+                var lengthBasedScore = pw.length * (config.minNnScoreToInfluenceBar / config.length.minLength);
+
+                // the NN score should generally be larger then the minNnScoreToInfluenceBar
+                // for passwords 8 characters or longer; a really weak password pattern 
+                // (e.g., "aaaaaaaaaa") is being used. don't let users abuse the
+                // length-based score in this way past the point where the NN should take over
+                lengthBasedScore = Math.min(lengthBasedScore, config.minNnScoreToInfluenceBar);
+
+                if ((typeof (nnNum) !== "undefined" && nnScore == 0) ||
+                    nnScore < config.minNnScoreToInfluenceBar) {
+
+                    overallScore = lengthBasedScore;
+
+                } else {
+                    overallScore = nnScore;
+                }
             }
 
             if (typeof (nnNum) !== "undefined" && nnNum != -1) {
                 console.log(pw + " [NN #: " + nnNum.toFixed(2) +
                     " (unscaled: " + unscaledNnNum.toFixed(2) + ")" +
-                    ", NN score: " + nnScoreAsPercent.toFixed(2) +
+                    ", NN score: " + nnScore.toFixed(2) +
                     ", heuristic score: " + heuristicScore.toFixed(2) +
                     ", overall score: " + overallScore.toFixed(2) + "]");
 
-		// print debug info
-		nni.debugNN(pw, false);
+                // print debug info
+                nni.debugNN(pw, false);
             }
-
 
             // Avoid errors in case the feedback mapping was somehow screwed up
             if (typeof (this.feedbackMapping[pw]) === "undefined") {
@@ -1172,7 +1192,13 @@ export module UIMisc {
             // Display bar in main window
             this.$("#cups-passwordmeter-span").css("width", Math.round(298 * score / 100).toString() + "px");
             // alert(compliance.toString());
-            this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger("change", [score.toString(), heuristicScore, nnNumScore, heuristicLogGuessNum, conservativeNnLogGuessNum, compliance]);
+            this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger("change",
+                [score.toString(),
+                    heuristicScore,
+                    nnNumScore,
+                    heuristicLogGuessNum,
+                    conservativeNnLogGuessNum,
+                    compliance]);
 
             // display bar in modal
             this.$("#cups-passwordmeter-span-modal").css("width", Math.round(298 * score / 100).toString() + "px");

@@ -1,5 +1,3 @@
-// pass in jquery reference, LZString reference and boolean flag for verbose output
-import JQuery = require("jquery");
 import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import BloomFilter = require("../js/bloom-filter-js");

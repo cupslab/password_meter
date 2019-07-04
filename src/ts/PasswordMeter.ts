@@ -1,8 +1,9 @@
 // Copyright 2017 by Carnegie Mellon University
+//
 // globals on entry:
-// $ for JQuery (infected with Bootstrap)
-// LZString for LZString
-// optional passwordMeterConfig for configuration
+//   $ for JQuery (infected with Bootstrap)
+//   LZString for LZString
+//   passwordMeterConfig for configuration (optional, will use defaults otherwise)
 
 import LZString = require("lz-string");
 import Helper = require("./helper");
@@ -84,16 +85,6 @@ export module PasswordMeter {
             var currentPwd = this.getJquery()("#pwbox").val() as string;
             this.data["nn"].debugNN(currentPwd, !summaryOnly);
         }
-
-        /* bootstrap apparently infects jquery
-            setBootstrap(bootstrap:Bootstrap):void {
-                this.data["bootstrap"] = bootstrap;
-            }
-        
-            getBootstrap():Bootstrap {
-                return this.data["bootstrap"];
-            }
-        */
     }
 
     export var instance = new Registry();
