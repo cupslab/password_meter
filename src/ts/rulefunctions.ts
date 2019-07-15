@@ -428,11 +428,7 @@ export module RuleFunctions {
             if (conservativeNnNum >= 0) {
                 if (conservativeNnNum > minLogNnGuessNum) {
                     compliant = true;
-                    // console.log("high enough NN guess number: " + pw + " (" + conservativeNnNum +
-                    //     " > " + minLogNnGuessNum + ")");
                 } else {
-                    // console.log("too low NN guess number: " + pw + " (" + conservativeNnNum +
-                    //     " < " + minLogNnGuessNum + ")");
                     thisExplanation = "<span style='color:" + noncompliantColor + "'>" +
                         noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
                 }

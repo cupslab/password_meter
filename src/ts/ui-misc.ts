@@ -900,7 +900,7 @@ export module UIMisc {
                 }
             }
 
-            if (typeof (nnNum) !== "undefined" && nnNum != -1) {
+            if (typeof (nnNum) !== "undefined" && nnNum != -1 && this.verboseMode) {
                 console.log(pw + " [NN #: " + nnNum.toFixed(2) +
                     " (unscaled: " + unscaledNnNum.toFixed(2) + ")" +
                     ", NN score: " + nnScore.toFixed(2) +

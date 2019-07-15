@@ -69,7 +69,6 @@ export module Helper {
                 if (this.verboseMode) {
                     this.log("Loaded " + added + " words to dictionary.")
                 }
-                console.log("Loaded " + added + " words to dictionary.")
             });
             return dict;
         }
@@ -84,7 +83,6 @@ export module Helper {
             if (this.verboseMode) {
                 this.log("Loaded " + added + " words to the dictionary.");
             }
-            console.log("Loaded " + added + " words to the dictionary.");
             return dict;
         }
 
@@ -106,9 +104,9 @@ export module Helper {
                 var words: Array<string> = decompressed.split(",");
                 var added: number = fBuildDict(words, dict);
                 if (this.verboseMode) {
-                    this.log("Decompressed and loaded " + added + " words to the dictionary.");
+                    console.log("Loaded " + added + " words to the dictionary for " + path);
                 }
-                console.log("Loaded " + added + " words to the dictionary for " + path);
+
             });
 
             return dict;
@@ -158,7 +156,9 @@ export module Helper {
                     }
                 }
                 var timeTaken = Date.now() - startTime;
-                console.log("Decompressed and loaded " + substringsAdded + " length-" + blacklistSubstringLength + " substrings (derived from a " + wordsAdded + "-word list) into a Bloom filter" + " [took " + timeTaken + "ms]");
+                if (this.verboseMode) {
+                    console.log("Decompressed and loaded " + substringsAdded + " length-" + blacklistSubstringLength + " substrings (derived from a " + wordsAdded + "-word list) into a Bloom filter" + " [took " + timeTaken + "ms]");
+                }
             });
             return bloomer;
         }

@@ -147,6 +147,7 @@ export module NeuralNetwork {
     (function() {
         var registry = PasswordMeter.PasswordMeter.instance;
         var config = registry.getConfig();
+        var verboseMode = false;
 
         var neuralNetworkConfig = config.neuralNetworkConfig;
         var nnFixed = new NeuralNetworkClient(nnFixedCallback, neuralNetworkConfig);
@@ -154,8 +155,10 @@ export module NeuralNetwork {
         var instance = new NeuralNetworkInterface(nn, nnFixed);
         registry.setNN(instance);
 
-        // initial NN debug message
-        instance.debugNN("", false);
-        console.log("To view all next char probabilities, use: PasswordMeter.debugNN()");
+        if (verboseMode) {
+            // initial NN debug message
+            instance.debugNN("", false);
+            console.log("To view all next char probabilities, use: PasswordMeter.debugNN()");
+        }
     }())
 }
