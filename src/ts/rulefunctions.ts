@@ -318,11 +318,7 @@ export module RuleFunctions {
             var thisExplanation = "";
             var compliant = false;
 
-            // explain
-            thisExplanation = "Not include the following characters: " + disallowedChars;
-
             // check	    
-            // potentialTODO we apparently also check for ASCII
             var pwUnique = pw.removeDuplicateChars();
             var disallowedChars = "";
 
@@ -336,6 +332,8 @@ export module RuleFunctions {
             if (disallowedChars.length === 0) {
                 compliant = true;
             }
+
+            thisExplanation = "Not include the following characters: " + disallowedChars;	    
 
             // report (note that we are only complaining about disallowed characters if they use one)
             if (compliant) {
