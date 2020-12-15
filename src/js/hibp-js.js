@@ -29,7 +29,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// based on https://github.com/mehdibo/hibp-js (with additional tweaks for meter/user study)
+
+// NOTE: this file is based on https://github.com/mehdibo/hibp-js
+// (with additional tweaks for use in password meter/user study)
 
 class PasswordLeaks {
 

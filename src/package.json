@@ -1,6 +1,6 @@
 {
   "name": "cups_password_meter",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Password Meter",
   "main": "PasswordMeter.js",
   "devDependencies": {
