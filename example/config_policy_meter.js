@@ -1,4 +1,4 @@
-// 1c12, minNN=10^10
+// 1c12, minNN=10^10, prohibit known leaked passwords
 var passwordMeterConfig = {
     provideConcretePasswordSuggestions: false,
     randomizeOrderCharClassRequirement: true,
@@ -58,7 +58,7 @@ var passwordMeterConfig = {
         limit: 3, 
         lengthException: 20,
     },
-    prohibitKnownLeaked: { // prohibit passwords found in database leaks, as reported by HIBP
+    prohibitKnownLeaked: { // prohibit passwords found in database leaks, as reported by Pwned Pwds
         active: true,
         smallestLength: 5,
     },
@@ -83,5 +83,12 @@ var passwordMeterConfig = {
     },
     staticUrlPrefix: "", // use if need need to prepend a path to the worker.min.js path
     barFillStringencyScaleFactor: 67 / 12, // 2/3 (~67%) of meter should represent 10^12
-    minNnScoreToInfluenceBar: 15 // point at which NN drives the meter, in terms of min characters (before this, a length-based heuristic is used)
+
+    // point at which NN password-strength estimates directly drive
+    // the strength bar, in terms of NN-based strength score (before
+    // this point, a length-based heuristic is used). The NN-based
+    // strength score is the product of the the scaled log10 guess
+    // number estimate and the 'barFillStringencyScaleFactor'
+    // configuration value
+    minNnScoreToInfluenceBar: 15 
 };

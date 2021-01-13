@@ -414,6 +414,22 @@ export module RuleFunctions {
             compliance["usernameDifference"] = compliant;
         }
 
+        // requirement: prohibit known previously-leaked passwords
+        if (config.prohibitKnownLeaked.active) {
+            var compliant = false;
+            var thisExplanation = "";
+
+            if (pw.length < config.prohibitKnownLeaked.smallestLength || !blacklists.previouslyLeaked(pw)) {
+                compliant = true;
+            } else {
+                compliant = false;
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol +
+                    "Not use a password found in previous security leaks</span>";
+                explanation["prohibitKnownLeaked"] = thisExplanation;
+            }
+            compliance["prohibitKnownLeaked"] = compliant;
+        }
+
         // requirement: min NN guess number (in log10)
         if (config.minLogNnGuessNum.active) {
             var compliant = false;
@@ -459,22 +475,6 @@ export module RuleFunctions {
                 explanation["sameChars"] = thisExplanation;
             }
             compliance["sameChars"] = compliant;
-        }
-
-        // requirement: prohibit known previously-leaked passwords
-        if (config.prohibitKnownLeaked.active) {
-            var compliant = false;
-            var thisExplanation = "";
-
-            if (pw.length < config.prohibitKnownLeaked.smallestLength || !blacklists.previouslyLeaked(pw)) {
-                compliant = true;
-            } else {
-                compliant = false;
-                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol +
-                    "Not use a password found in previous security leaks</span>";
-                explanation["prohibitKnownLeaked"] = thisExplanation;
-            }
-            compliance["prohibitKnownLeaked"] = compliant;
         }
 
         // potentialTODO reduce operation
