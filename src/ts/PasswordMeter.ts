@@ -1,18 +1,15 @@
 // Copyright 2017 by Carnegie Mellon University
+//
 // globals on entry:
-// $ for JQuery (infected with Bootstrap)
-// LZString for LZString
-// optional passwordMeterConfig for configuration
+//   $ for JQuery (infected with Bootstrap)
+//   LZString for LZString
+//   passwordMeterConfig for configuration (optional, will use defaults otherwise)
 
-
-
-import JQuery = require("jquery");
 import LZString = require("lz-string");
-//potentialTODO bootstrap has infected jquery already
-//import Bootstrap = require("bootstrap");
 import Helper = require("./helper");
 import Config = require("./config");
 import Dictionaries = require("./dict-misc");
+import BlacklistImport = require("./blacklist");
 import UIMisc = require("./ui-misc");
 import NeuralNetwork = require("./nn-misc");
 
@@ -60,6 +57,14 @@ export module PasswordMeter {
             return this.data["dictionaries"];
         }
 
+        setBlacklists(blacklists: BlacklistImport.BlacklistModule.Blacklists) {
+            this.data["blacklists"] = blacklists;
+        }
+
+        getBlacklists(): BlacklistImport.BlacklistModule.Blacklists {
+            return this.data["blacklists"];
+        }
+
         setUI(ui: UIMisc.UIMisc.UIMisc) {
             this.data["ui"] = ui;
         }
@@ -76,15 +81,10 @@ export module PasswordMeter {
             return this.data["nn"];
         }
 
-        /* bootstrap apparently infects jquery
-            setBootstrap(bootstrap:Bootstrap):void {
-                this.data["bootstrap"] = bootstrap;
-            }
-        
-            getBootstrap():Bootstrap {
-                return this.data["bootstrap"];
-            }
-            */
+        debugNN(summaryOnly: boolean): void {
+            var currentPwd = this.getJquery()("#pwbox").val() as string;
+            this.data["nn"].debugNN(currentPwd, !summaryOnly);
+        }
     }
 
     export var instance = new Registry();

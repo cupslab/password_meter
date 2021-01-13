@@ -1,6 +1,9 @@
 lz-string was licensed under the WTFPL
 bootstrap was licensed under the MIT license
 jquery was licensed under the Apache license
+hibp.js was licensed under the MIT license
+bloom-filter.js was licensed under the Mozilla Public License 2.0
+There are no licensing or attribution requirements on the Pwned Passwords API.
 
 Phrase and word corpora were derived from the following sources:
 -Wikipedia database download (dual licensed under GFDL and CC-BY-SA)

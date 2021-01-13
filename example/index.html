@@ -43,81 +43,19 @@ if (!Function.prototype.bind) {
   };
 }
 </script>
-<script src="nn-client.min.js"></script> <!-- Neural networks; this file loads others -->
 
-<script>
-// this defines a policy for 8 character minimum passwords
-var passwordMeterConfig = {
-    colors: { // display colors
-        compliant: "#006600", // by default show completed requirement in green
-        noncompliant: "#660000", // by default show outstanding requirement in red
-    },
-    symbols: { // display symbols
-        compliant: "&#x2714; ", // HEAVY CHECK MARK
-        noncompliant: "&#x2751; ", // LOWER RIGHT SHADOWED WHITE SQUARE
-    },
-    remindAgainstReuse: true, // true to emphasize *not* reusing passwords
-    ignoredWords: // list of words that should count for nothing in the password
-        ["pittsburgh",
-        "steelers", "stillers", "penguins", "pens", "pirates", "bucs", "carnegie", "mellon",
-        "university"],
-    forbiddenPasswords: // list of passwords that should be rejected
-         ["123456", "password", "12345", "12345678", "qwerty", "1234567890", "1234",
-         "baseball", "dragon", "football", "1234567", "monkey", "letmein", "abc123",
-         "111111", "mustang", "access", "shadow", "master", "michael", "superman",
-         "696969", "123123", "batman", "trustno1"],
-    length: {
-        active: true,
-        minLength: 8,
-        maxLength: 0, // set to 0 if there is no maximum length
-    },
-    classCount: { // number of character classes
-        active: false,
-        minCount: 1, // classes are upper case, lower case, digits and symbols (others)
-        maxCount: 4,
-    },
-    classRequire: { // required character classes
-        active: false,
-        upperCase: false,
-        lowerCase: true,
-        digits: true,
-        symbols: false,
-    },
-    classAllow: { // permitted character classes
-        active: false,
-        upperCase: true,
-        lowerCase: true,
-        digits: true,
-        symbols: true,
-    },
-    forbidPasswords: {
-        active: true,
-        includeLargerList: true, // setting this to true also blacklists tens of thousands
-        // of common passwords loaded for the common passwords dictionary check
-    },
-    forbidChars: {
-        active: false,
-        list: [],
-    },
-    repeatChars: {
-        active: false,
-        limit: 3, // prohibit a character being repeated N or more times consecutively
-    },
-    usernameDifference: {
-        active: true,
-        limit: 1, // prohibit passwords being N or fewer characters different than username
-    },
-    neuralNetworkConfig: {
-        intermediate: "basic_3M.info_and_guess_numbers.no_bloomfilter.json",
-        file: "basic_3M.weight_arch.quantized.fixed_point1000.zigzag.nospace.json",
-        zigzag: true,
-        scaleFactor: 300,
-    },
 
-};
-</script>
+<!-- Neural networks -->
+<script type="text/javascript" src="config_policy_meter.js"></script>
+<script type="text/javascript" src="nn-client.js"></script>
+
 <!-- Load external files needed for the meter to run -->
-<script src="PasswordMeter.js"></script>
+<script type="text/javascript" src="PasswordMeter.js"></script>
+
+<!-- this needs to be loaded after PasswordMeter.js -->
+<!-- <script type="text/javascript" src="{% static 'userstudy/pwd_creation.js' %}"></script> -->
+
+<script src="nn-client.js"></script> <!-- Neural networks; this file loads others -->
 
 <script>
 // obtain handle to PasswordMeter UI
@@ -130,7 +68,9 @@ var ui = PasswordMeter.getUI();
 <div class="mainBox">
     <!-- The main password-creation section -->
     <div class="grad-maroon createPWHeader">
-        <p class="headerText" style="margin-bottom: 0;">Create Your Password</p>
+      <p class="headerText">This is a demo meter. Please don't type in your real password.</p>
+      <p style="margin-bottom: 0;">The password policy enforced by this meter requires passwords to contain a minimum of 12 characters, not be found in previous password leaks,
+	and to be estimated to withstand 10<sup>10</sup> guessing attempts. For more information, see <a href="https://github.com/cupslab/password_meter">here</a>.</p>
     </div>
     <div class="passwordCreationSection">
         <div class="pwfield" style="display:inline-block; text-align: center; margin-left: auto; margin-right: auto;">
@@ -237,10 +177,10 @@ var ui = PasswordMeter.getUI();
                     </tr>
                 </table>
                 <div class="recommended fixedPWavailablePortal" style="display: none;">
-                    <button type="button" class="buttonLayout buttonColoring" onclick="$('#showHidePWNonModal').prop('checked',true);ui.toggleShowHideNonModal();">See Your Password<br />With Our Improvements</button>
+                    <button id="showHidePWNonModalButton" type="button" class="buttonLayout buttonColoring" onclick="$('#showHidePWNonModal').prop('checked',true);ui.toggleShowHideNonModal();">See Your Password<br />With Our Improvements</button>
                 </div>
                 <div id="nonmodalConcreteSuggestion" class="recommended concreteSuggestionDiv" style="display: none;"><span class="betterChoice">A better choice: </span><span id="nonmodalFixedPW" class="fixedPW fixedPWColor" onclick="ui.fixPWNonModal();"></span></div>
-                <div class="portalToGenericAdviceModal portalToGenericAdviceModalColor" style="display:none" onclick="$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);" data-target="#myModalGeneric">How to make strong passwords</div>
+                <div id="genericAdviceNonModalPortal" class="portalToGenericAdviceModal portalToGenericAdviceModalColor" style="display:none" onclick="$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);" data-target="#myModalGeneric">How to make strong passwords</div>
             </div>
         </div>
         <div style="float:left; margin:0px; padding:0px; width: 100%; height:10px;">&nbsp;</div>
@@ -276,7 +216,7 @@ var ui = PasswordMeter.getUI();
                     <span>Show Password</span><span class="detailedFeedback"> &amp; Detailed Feedback</span> <span class="checkboxRequiringLabel"><input type="checkbox" id="showHidePWModal" class="showHideCheckbox" onclick="ui.toggleShowHideModal();" /></span>
                 </div>
                 <div class="recommended fixedPWavailablePortal" style="display: none;">
-                    <button type="button" class="buttonLayout buttonColoring" onclick="$('#showHidePWModal').prop('checked',true); ui.toggleShowHideModal();">See Your Password With Our Improvements</button>
+                    <button id="showHidePWModalButton" type="button" class="buttonLayout buttonColoring" onclick="$('#showHidePWModal').prop('checked',true); ui.toggleShowHideModal();">See Your Password With Our Improvements</button>
                 </div>
                 <div id="modalConcreteSuggestion" class="recommended concreteSuggestionDiv" style="display: none;">
                     <span class="betterChoice">A better choice: </span><span id="modalFixedPW" class="fixedPW fixedPWColor" onclick="ui.fixPWModal();"></span>
@@ -323,10 +263,10 @@ var ui = PasswordMeter.getUI();
                         <td id="tip8" class="modalTextCell"><p id="suggestion8" class="suggestionText"></p></td>
                     </tr>
                 </table>
-                <div class="portalToGenericAdviceModal portalToGenericAdviceModalColor" style="display:none" onclick="$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);" data-target="#myModalGeneric">How to make strong passwords</div>
+                <div id="genericAdviceModalPortal" class="portalToGenericAdviceModal portalToGenericAdviceModalColor" style="display:none" onclick="$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);" data-target="#myModalGeneric">How to make strong passwords</div>
             </div>
             <div class="modal-footer">
-                <button type="button" id="discardButton" class="buttonLayout buttonColoring" data-dismiss="modal" style="display: none; margin-right: 10px;" onClick="ui.discardpw();ui.spawnRating();">Cancel</button>
+                <button type="button" id="discardButton" class="buttonLayout buttonColoring" data-dismiss="modal" style="display: none; margin-right: 10px;" onClick="ui.discardpw();ui.displayRating($('#pwbox').val());">Cancel</button>
                 <button type="button" id="keepButton" class="buttonLayout buttonColoring" data-dismiss="modal" onclick="ui.keeppw();">Ok</button>
             </div>
         </div>

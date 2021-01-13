@@ -3,137 +3,162 @@ import Constants = require("./constants");
 import Config = require("./config");
 
 declare class NeuralNetworkClient {
-	constructor(cb: (n: number, s: string) => void, config: Config.Config.ConfigNeuralNetwork);
-	query_guess_number(pw: string): void;
+    constructor(cb: (n: number, s: string) => void, config: Config.Config.ConfigNeuralNetwork);
+    query_guess_number(pw: string): void;
+    predict_next(s: string): void;
+    debug_prefix_prob(s: string): void;
+    debug_password_prob(s: string): void;
+    debug_password_guess_num(s: string): void;
+    debug_next_char(s: string, verbose: boolean): void;
 }
 
 export module NeuralNetwork {
-	var verboseMode = false;
-	// In case neural nets don't load, don't wait to give a score
-	var neverHeardFromNN = true;
+    // In case neural nets don't load, don't wait to give a score
+    var neverHeardFromNN = true;
 
-	// Helper function designed to post-process neural network guess numbers
-	// to account for capitalization. 
-	// It scales guess numbers by 1.5 if they capitalize the first character, 
-	// by 2 if they capitalize all characters, by 10 if they use any other pattern,
-	// and 1 if there are no uppercase characters.
-	function uppercasePredictabilityPostProcessing(pw: string): number {
-		// Start by assuming no uppercase at all
-		var scalingFactor = 1;
-		var allButFirstChar = pw.substr(1);
-		// Check if first character is uppercase, and that no others are
-		if ((pw.charAt(0) === pw.charAt(0).toUpperCase()
-			&& pw.charAt(0) !== pw.charAt(0).toLowerCase())
-			&& (allButFirstChar === allButFirstChar.toLowerCase())) {
-			scalingFactor = 1.5;
-			// Check if `all uppercase' (>=3 characters uppercase and no lowercase letters)
-		} else if (pw.search(/[a-z]/) == -1) {
-			// First delete all uppercase characters
-			var pwNoUppercase = pw.replace(Constants.Constants.UPPERCASE_LETTERS_GLOBAL, "");
-			// Check if password is now 3+ characters shorter
-			if (pw.length >= (pwNoUppercase.length + 3)) {
-				scalingFactor = 2;
-			}
-			// Check if there are uppercase characters that don't fit into those two patterns
-		} else if (pw !== pw.toLowerCase()) {
-			scalingFactor = 10;
-		}
-		return scalingFactor;
-	}
+    // mapping of passwords to score based on neural networks
+    var neuralNetMapping: { [key: string]: number } = {};
 
-	// Math.log10 is not universal yet
-	function log10(x: number): number {
-		return Math.log(x) / Math.LN10;
-	}
+    // Helper function designed to post-process neural network guess numbers
+    // to account for capitalization. 
+    // It scales guess numbers by 1.5 if they capitalize the first character, 
+    // by 2 if they capitalize all characters, by 10 if they use any other pattern,
+    // and 1 if there are no uppercase characters.
+    function uppercasePredictabilityPostProcessing(pw: string): number {
+        // Start by assuming no uppercase at all
+        var scalingFactor = 1;
+        var allButFirstChar = pw.substr(1);
+        // Check if first character is uppercase, and that no others are
+        if ((pw.charAt(0) === pw.charAt(0).toUpperCase()
+            && pw.charAt(0) !== pw.charAt(0).toLowerCase())
+            && (allButFirstChar === allButFirstChar.toLowerCase())) {
+            scalingFactor = 1.5;
+            // Check if `all uppercase' (>=3 characters uppercase and no lowercase letters)
+        } else if (pw.search(/[a-z]/) == -1) {
+            // First delete all uppercase characters
+            var pwNoUppercase = pw.replace(Constants.Constants.UPPERCASE_LETTERS_GLOBAL, "");
+            // Check if password is now 3+ characters shorter
+            if (pw.length >= (pwNoUppercase.length + 3)) {
+                scalingFactor = 2;
+            }
+            // Check if there are uppercase characters that don't fit into those two patterns
+        } else if (pw !== pw.toLowerCase()) {
+            scalingFactor = 10;
+        }
+        return scalingFactor;
+    }
 
-	// The main callback function for the neural network evaluation.
-	// When it returns, it will display the rating (update the UI).
-	function nnCallback(result: number, password: string): void {
-		// Make 10^15 guesses fill 2/3rds of meter
-		const scaleToMeter = 67 / 15;
+    // Math.log10 is not universal yet
+    export function log10(x: number): number {
+        return Math.log(x) / Math.LN10;
+    }
 
-		var UI = PasswordMeter.PasswordMeter.instance.getUI();
-		result = result * uppercasePredictabilityPostProcessing(password);
-		if (verboseMode) {
-			console.log(password + " is NN guess # " + result);
-		}
-		neverHeardFromNN = false;
-		var value = log10(result) * scaleToMeter;
-		// With estimates, we can get fractional/negative guess numbers
-		// for terrible passwords, so compensate to have a very small number
-		if (result <= 1) {
-			value = log10(1.1) * scaleToMeter;
-		}
-		if (isNaN(result)) {
-			value = -1;
-		}
-		// Neural nets give infinity for empty passwords, hence check length
-		if (password.length > 0 && result == Number.POSITIVE_INFINITY) {
-			value = 100;
-		}
-		UI.setNeuralnetMapping(password, value);
-		UI.displayRating(password);
-	}
+    function postProcessNnNumAndCache(result: number, password: string): void {
 
-	// potentialTODO except for the logging, this looks exactly the same as above
-	// This alternate callback function is used instead when evaluating 
-	// concrete suggestions for a better password
-	export function nnFixedCallback(result: number, password: string): void {
-		// Make 10^15 guesses fill 2/3rds of meter
-		const scaleToMeter = 67 / 15;
+        var config = PasswordMeter.PasswordMeter.instance.getConfig();
+        if (config.neuralNetworkConfig.postProcessUppercasePredictability) {
+            // PGS3 NN models do not need uppercase predictability post-processing,
+            // only PGS++ models
+            result = result * uppercasePredictabilityPostProcessing(password);
+        }
 
-		var UI = PasswordMeter.PasswordMeter.instance.getUI();
-		result = result * uppercasePredictabilityPostProcessing(password);
-		if (verboseMode) {
-			console.log("Fixed possibility " + password + " is NN guess # " + result);
-		}
-		neverHeardFromNN = false;
-		var value = log10(result) * scaleToMeter;
+        neverHeardFromNN = false;
 
-		// With estimates, we can get fractional/negative guess numbers
-		// for terrible passwords, so compensate to have a very small number
-		if (result <= 1) {
-			value = log10(1.1) * scaleToMeter;
-		}
-		if (isNaN(result)) {
-			value = -1;
-		}
-		// Neural nets give infinity for empty passwords, hence check length
-		if (password.length > 0 && result == Number.POSITIVE_INFINITY) {
-			value = 100;
-		}
-		UI.setNeuralnetMapping(password, value);
-		UI.synthesizeFixed(password);
-	}
+        var value: number;
+        if (result <= 1) {
+            value = 0;
+        } else {
+            value = log10(result);
+        }
 
-	export class NeuralNetworkInterface {
-		nnfixed: NeuralNetworkClient;
-		nn: NeuralNetworkClient;
+        // Neural nets give infinity for empty passwords, hence check
+        // length. as long as password is not empty string (""), if NN
+        // is +infinity, then map to 100 percent (due to NN bug, empty
+        // string maps to positive +infinity also; don't map to 100
+        // for that case)
+        if (password.length > 0 && result == Number.POSITIVE_INFINITY) {
+            value = 100;
+        }
+        // if result is undefined for some reason, just store -1
+        // as NN, so meter will ignore that passwords NN number
+        if (isNaN(result)) {
+            value = -1;
+        }
 
-		constructor(nn: NeuralNetworkClient, nnfixed: NeuralNetworkClient) {
-			this.nn = nn;
-			this.nnfixed = nnfixed;
-		}
+        var nni = PasswordMeter.PasswordMeter.instance.getNN();
+        nni.setNeuralNetNum(password, value);
+    }
 
-		public heardFromNn(): boolean {
-			return !neverHeardFromNN;
-		}
-	}
+    // The main callback function for the neural network evaluation.
+    // When it returns, it will display the rating (update the UI).
+    function nnCallback(result: number, password: string): void {
+        postProcessNnNumAndCache(result, password);
+        var UI = PasswordMeter.PasswordMeter.instance.getUI();
+        UI.displayRating(password);
+    }
 
-	(function () {
-		var registry = PasswordMeter.PasswordMeter.instance;
-		var jquery = registry.getJquery();
-		var lzstring = registry.getLzstring();
-		var config = registry.getConfig();
+    // This alternate callback function is used instead when evaluating 
+    // concrete suggestions for a better password
+    export function nnFixedCallback(result: number, password: string): void {
+        postProcessNnNumAndCache(result, password);
+        var UI = PasswordMeter.PasswordMeter.instance.getUI();
+        UI.synthesizeFixed(password);
+    }
 
-		var neuralNetworkConfig = config.neuralNetworkConfig;
+    export class NeuralNetworkInterface {
+        nn: NeuralNetworkClient;
+        nnfixed: NeuralNetworkClient;
 
-		var verboseMode = false;
-		var nnFixed = new NeuralNetworkClient(nnFixedCallback, neuralNetworkConfig);
-		var nn = new NeuralNetworkClient(nnCallback, neuralNetworkConfig);
-		var instance = new NeuralNetworkInterface(nn, nnFixed);
+        constructor(nn: NeuralNetworkClient, nnfixed: NeuralNetworkClient) {
+            this.nn = nn;
+            this.nnfixed = nnfixed;
+        }
 
-		registry.setNN(instance);
-	}())
+        public heardFromNn(): boolean {
+            return !neverHeardFromNN;
+        }
 
+        // set the mapping from the neural network
+        public setNeuralNetNum(pw: string, value: number): void {
+            neuralNetMapping[pw] = value;
+        }
+
+        // set the mapping from the neural network
+        public getNeuralNetNum(pw: string): number {
+            return neuralNetMapping[pw];
+        }
+
+        // initiate NN guess number lookup
+        public queryGuessNumber(pw: string, isConcreteSuggestionCandidate: boolean): void {
+            if (isConcreteSuggestionCandidate) {
+                this.nnfixed.query_guess_number(pw);
+            } else {
+                this.nn.query_guess_number(pw);
+            }
+        }
+
+        public debugNN(pw: string, verbose: boolean) {
+            this.nn.debug_prefix_prob(pw);
+            this.nn.debug_password_prob(pw);
+            this.nn.debug_next_char(pw, verbose);
+        }
+    }
+
+    (function() {
+        var registry = PasswordMeter.PasswordMeter.instance;
+        var config = registry.getConfig();
+        var verboseMode = false;
+
+        var neuralNetworkConfig = config.neuralNetworkConfig;
+        var nnFixed = new NeuralNetworkClient(nnFixedCallback, neuralNetworkConfig);
+        var nn = new NeuralNetworkClient(nnCallback, neuralNetworkConfig);
+        var instance = new NeuralNetworkInterface(nn, nnFixed);
+        registry.setNN(instance);
+
+        if (verboseMode) {
+            // initial NN debug message
+            instance.debugNN("", false);
+            console.log("To view all next char probabilities, use: PasswordMeter.debugNN()");
+        }
+    }())
 }

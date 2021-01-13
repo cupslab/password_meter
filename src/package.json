@@ -1,22 +1,28 @@
 {
   "name": "cups_password_meter",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Password Meter",
   "main": "PasswordMeter.js",
   "devDependencies": {
-    "@types/core-js": "0.9.36",
+    "@types/core-js": "latest",
     "@types/jquery": "latest",
     "@types/lz-string": "latest",
+    "@types/node": "latest",
+    "@types/bootstrap": "latest",
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babelify": "7.3.0",
+    "browserify": "latest",
     "tsify": "latest",
     "typescript": "latest",
-    "babelify": "latest",
-    "uglifyify": "latest",
-    "browserify": "latest"
+    "uglifyify": "latest"
   },
   "dependencies": {
+    "babel-core": "^6.0.0",
+    "babel-preset-stage-2": "^6.24.1"
   },
   "scripts": {
-    "do-browserify" : "browserify ts/*.ts -p [ tsify --noImplicitAny ] -o PasswordMeter.js"
+    "do-browserify": "browserify ts/*.ts -p [ tsify ] -o PasswordMeter.js"
   },
   "browserify": {
     "transform": [

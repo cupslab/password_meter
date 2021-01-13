@@ -1,12 +1,8 @@
 import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import Helper = require("./helper");
-import Dictionaries = require("./dict-misc");
 import Constants = require("./constants");
 
-/* ************** */
-/* Rule Functions */
-/* ************** */
 export module RuleFunctions {
     interface ResultsDetail {
         compliance: { [key: string]: boolean };
@@ -21,7 +17,7 @@ export module RuleFunctions {
     export function verifyMinimumRequirements(pw: string, username: string): VerifyResult {
         var registry = PasswordMeter.PasswordMeter.instance;
         var config: Config.Config.Config = registry.getConfig();
-        var dictionaries = registry.getDictionaries();
+        var blacklists = registry.getBlacklists();
 
         var compliantColor = config.colors.compliant;
         var noncompliantColor = config.colors.noncompliant;
@@ -32,7 +28,7 @@ export module RuleFunctions {
         var compliance: { [key: string]: boolean } = {};
 
         if (config.length.active) {
-            //   dimension 1: length (min / max)
+            // requirement: length (min/max)
             var minLength = config.length.minLength;
             var maxLength = config.length.maxLength;
             var compliant = false;
@@ -62,7 +58,7 @@ export module RuleFunctions {
             compliance["length"] = compliant;
         }
 
-        //   prep for dimensions 2-4
+        // prep for character-class requirements
         var hasLowercase = false;
         var hasUppercase = false;
         var hasDigits = false;
@@ -87,7 +83,7 @@ export module RuleFunctions {
             hasSymbols = true;
         }
 
-        //   dimension 2: mandatory # of character classes
+        // requirement: mandatory # of character classes
         if (config.classCount.active) {
             var minCharacterClasses = config.classCount.minCount;
             var maxCharacterClasses = config.classCount.maxCount;
@@ -100,7 +96,13 @@ export module RuleFunctions {
             } else {
                 thisExplanation = "Use " + minCharacterClasses.toString() + "-" + maxCharacterClasses.toString() + " of the following: ";
             }
-            thisExplanation += "uppercase letters; lowercase letters; digits; symbols";
+
+            if (config.randomizeOrderCharClassRequirement) {
+                var ui = PasswordMeter.PasswordMeter.instance.getUI();
+                thisExplanation += ui.getCharClassStringForCharClassCountReq();
+            } else {
+                thisExplanation += "uppercase letters; lowercase letters; digits; symbols";
+            }
 
             // check
             if (numClasses >= minCharacterClasses && numClasses <= maxCharacterClasses) {
@@ -119,7 +121,7 @@ export module RuleFunctions {
             compliance["classCount"] = compliant;
         }
 
-        //   dimension 3: mandatory character classes
+        // requirement: mandatory character classes
         if (config.classRequire.active) {
             var uppercaseLettersRequired = config.classRequire.upperCase;
             var lowercaseLettersRequired = config.classRequire.lowerCase;
@@ -129,33 +131,39 @@ export module RuleFunctions {
             var thisExplanation = "";
             var compliant = false;
 
-            // explain
-            if (lowercaseLettersRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a lowercase letter";
-                } else {
-                    thisExplanation = "Contain a lowercase letter";
+            if (config.randomizeOrderCharClassRequirement) {
+                var ui = PasswordMeter.PasswordMeter.instance.getUI();
+                thisExplanation += ui.getCharClassStringForMandatoryCharClassReq();
+            } else {
+
+                // explain
+                if (lowercaseLettersRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a lowercase letter";
+                    } else {
+                        thisExplanation = "Contain a lowercase letter";
+                    }
                 }
-            }
-            if (uppercaseLettersRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and an uppercase letter";
-                } else {
-                    thisExplanation = "Contain an uppercase letter";
+                if (uppercaseLettersRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and an uppercase letter";
+                    } else {
+                        thisExplanation = "Contain an uppercase letter";
+                    }
                 }
-            }
-            if (digitsRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a digit";
-                } else {
-                    thisExplanation = "Contain a digit";
+                if (digitsRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a digit";
+                    } else {
+                        thisExplanation = "Contain a digit";
+                    }
                 }
-            }
-            if (symbolsRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a symbol";
-                } else {
-                    thisExplanation = "Contain a symbol";
+                if (symbolsRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a symbol";
+                    } else {
+                        thisExplanation = "Contain a symbol";
+                    }
                 }
             }
 
@@ -180,10 +188,9 @@ export module RuleFunctions {
 
             explanation["classRequire"] = thisExplanation;
             compliance["classRequire"] = compliant;
-
         }
 
-        //   dimension 4: forbidden character classes
+        // requirement: forbidden character classes
         if (config.classAllow.active) {
             var uppercaseLettersPermitted = config.classAllow.upperCase;
             var lowercaseLettersPermitted = config.classAllow.lowerCase;
@@ -267,59 +274,51 @@ export module RuleFunctions {
             compliance["classAllow"] = compliant;
         }
 
-        //   dimension 5: forbidden passwords
-        // potentialTODO how much of this is covered by forbidPasswords?
-        if (config.forbidPasswords.active) {
-            // potentialTODO put this under forbidPasswords?
-            var forbiddenPasswords = config.forbiddenPasswords;
-            var includelargerlist = config.forbidPasswords.includeLargerList;
+        // requirement: blacklist / forbidden passwords
+        if (config.blacklist.active) {
             var thisExplanation = "";
             var compliant = false;
 
             // explain
             thisExplanation = "Not be an extremely common password";
 
-            // check
-            // if it's in our small array from the config file OR,
-            // assuming we included the larger list, it's on that list (case-insensitive)
+            var isBlacklisted = false;
+            if (pw.length > 0) {
 
-            // potentialTODO use Array.contains? no strictness.
-            if (pw.length === 0 || forbiddenPasswords.indexOf(pw.toLowerCase()) === -1) {
-                if (includelargerlist) {
-                    if (pw.length === 0 || dictionaries.passwordsDict[pw.toLowerCase()] !== true) {
-                        compliant = true;
-                    }
-                } else {
-                    compliant = true;
+                var stringToCheck = pw; // default is case-sensitive fullstring
+                if (config.blacklist.stripDigitsSymbolsFromPassword) {
+                    stringToCheck = stringToCheck.replace(/[^a-zA-Z]/gi, '');
                 }
+                if (!config.blacklist.caseSensitive) {
+                    stringToCheck = stringToCheck.toLowerCase();
+                }
+
+                isBlacklisted = blacklists.blacklistRejects(stringToCheck);
             }
 
-            // report
-            // note that we are only complaining about disallowed passwords if they use one
-            if (compliant) {
-            } else {
+            compliant = !isBlacklisted ||
+                pw.length === 0 ||
+                (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
+
+            // report (note that we are only complaining about disallowed passwords if they use one)
+            if (!compliant) {
                 thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
 
             }
 
             if (!compliant) {
-                explanation["forbidPasswords"] = thisExplanation;
+                explanation["blacklist"] = thisExplanation;
             }
-            compliance["forbidPasswords"] = compliant;
+            compliance["blacklist"] = compliant;
         }
 
-        //   dimension 6: forbidden/permitted characters
+        // requirement: forbidden/permitted characters
         if (config.forbidChars.active) {
             var forbiddenChars = config.forbidChars.list;
             var thisExplanation = "";
             var compliant = false;
 
-            // explain
-            thisExplanation = "Not include the following characters: " + disallowedChars;
-            // note that we are only complaining about disallowed characters if they use one
-            // potentialTODO we apparently also check for ASCII
-
-            // check
+            // check	    
             var pwUnique = pw.removeDuplicateChars();
             var disallowedChars = "";
 
@@ -334,7 +333,9 @@ export module RuleFunctions {
                 compliant = true;
             }
 
-            // report
+            thisExplanation = "Not include the following characters: " + disallowedChars;	    
+
+            // report (note that we are only complaining about disallowed characters if they use one)
             if (compliant) {
             } else {
                 thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
@@ -346,7 +347,7 @@ export module RuleFunctions {
             compliance["forbidChars"] = compliant;
         }
 
-        // dimension 7: repeated consecutive characters
+        // requirement: repeated consecutive characters
         if (config.repeatChars.active) {
             var repeatedCharsLimit = config.repeatChars.limit;
             var thisExplanation = "";
@@ -370,11 +371,9 @@ export module RuleFunctions {
             // report
             if (compliant) {
                 thisExplanation = "<span style='color:" + compliantColor + "'>" + compliantSymbol + thisExplanation;
-
             } else {
                 thisExplanation += " (<b>" + charsRepeatedConsecutively.removeDuplicates().join("</b>, <b> ") + "</b>)";
                 thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation;
-
             }
             thisExplanation += "</span>";
 
@@ -382,7 +381,7 @@ export module RuleFunctions {
             compliance["repeatChars"] = compliant;
         }
 
-        // dimension 8: password - username comparison
+        // requirement: password - username comparison
         if (config.usernameDifference.active) {
             var differenceFromUsername = config.usernameDifference.limit;
             var thisExplanation = "";
@@ -391,7 +390,7 @@ export module RuleFunctions {
             // explain
             thisExplanation = "Not base your password around your username";
 
-            //check
+            // check
             var pwcopy = pw.toLowerCase();
             var usernamecopy = username.toLowerCase();
             // remove all occurrences of username
@@ -415,6 +414,69 @@ export module RuleFunctions {
             compliance["usernameDifference"] = compliant;
         }
 
+        // requirement: prohibit known previously-leaked passwords
+        if (config.prohibitKnownLeaked.active) {
+            var compliant = false;
+            var thisExplanation = "";
+
+            if (pw.length < config.prohibitKnownLeaked.smallestLength || !blacklists.previouslyLeaked(pw)) {
+                compliant = true;
+            } else {
+                compliant = false;
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol +
+                    "Not use a password found in previous security leaks</span>";
+                explanation["prohibitKnownLeaked"] = thisExplanation;
+            }
+            compliance["prohibitKnownLeaked"] = compliant;
+        }
+
+        // requirement: min NN guess number (in log10)
+        if (config.minLogNnGuessNum.active) {
+            var compliant = false;
+            var thisExplanation = "";
+            var minLogNnGuessNum = config.minLogNnGuessNum.threshold;
+            var nni = PasswordMeter.PasswordMeter.instance.getNN();
+            var conservativeNnNum = nni.getNeuralNetNum(pw);
+
+            // if nnNum < 0, then we are still waiting to hear back from the NN
+            if (conservativeNnNum >= 0) {
+                if (conservativeNnNum > minLogNnGuessNum) {
+                    compliant = true;
+                } else {
+                    thisExplanation = "<span style='color:" + noncompliantColor + "'>" +
+                        noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
+                }
+            }
+
+            if (!compliant) {
+                explanation["minLogNnGuessNum"] = thisExplanation;
+            }
+            compliance["minLogNnGuessNum"] = compliant;
+        }
+
+        // requirement: same character (repeated in password, including non-consecutive repetition)
+        if (config.sameChars.active) {
+            var sameCharsLimit = config.sameChars.limit;
+            var thisExplanation = "";
+            var compliant = false;
+
+            // explain
+            if (pw.length >= config.sameChars.lengthException || (satisfiesMaxChar(pw, sameCharsLimit))) {
+                compliant = true;
+            } else {
+                thisExplanation = "Not contain the same character more than " + sameCharsLimit.toString() +
+                    "+ times";
+            }
+
+            // report (only explain if violate requirement)
+            if (!compliant) {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol +
+                    thisExplanation + "</span>";
+                explanation["sameChars"] = thisExplanation;
+            }
+            compliance["sameChars"] = compliant;
+        }
+
         // potentialTODO reduce operation
         var overallCompliance: boolean = true;
         for (const item in compliance) {
@@ -431,6 +493,24 @@ export module RuleFunctions {
         };
 
         return ret;
+    }
+
+    // helper function to determine if a password satisfies a max-char requirement
+    // for a given threshold
+    function satisfiesMaxChar(pw: string, maxAllowed: number) {
+        var pwChars = {};
+        for (var i = 0; i < pw.length; i++) {
+            var pwChar = pw.charAt(i);
+            if (pwChar in pwChars) {
+                pwChars[pwChar] = pwChars[pwChar] + 1;
+                if (pwChars[pwChar] > maxAllowed) {
+                    return false;
+                }
+            } else {
+                pwChars[pwChar] = 1;
+            }
+        }
+        return true;
     }
 
     interface PwLengthComment {
@@ -488,7 +568,6 @@ export module RuleFunctions {
         var uppercaseCount = 0;
         var publicText = "";
         var sensitiveText = "";
-        //var problemText = "";
         var reasonWhy = "";
         var fixedPW = "";
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
@@ -503,9 +582,6 @@ export module RuleFunctions {
             publicText = "Consider using more uppercase letters";
             sensitiveText = "Consider using ";
             sensitiveText += (uppercaseCount + 1).toString() + " or more uppercase letters";
-            //if(uppercaseCount != 1) {
-            //	sensitiveText+="s";
-            //}
             reasonWhy = "Uppercase letters are surprisingly uncommon in passwords, which makes them hard to guess";
             var char1 = 65 + Math.floor(Math.random() * 26); // add an uppercase letter somewhere
             var loc1 = Math.floor(1 + Math.random() * (pw.length - 1)); // don't make it the first or last character since so many pws have that
@@ -532,7 +608,6 @@ export module RuleFunctions {
         var lowercaseCount = 0;
         var publicText = "";
         var sensitiveText = "";
-        //var problemText = "";
         var reasonWhy = "";
         var fixedPW = "";
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
@@ -549,9 +624,7 @@ export module RuleFunctions {
             publicText = "Consider using more lowercase letters";
             sensitiveText = "Consider using ";
             sensitiveText += (lowercaseCount + 1) + " or more lowercase letters";
-            //if(lowercaseCount != 1) {
-            //	sensitiveText+="s";
-            //}
+
             var char1 = 97 + Math.floor(Math.random() * 26); // add a lower letter somewhere
             var loc1 = Math.floor(1 + Math.random() * (pw.length - 1)); // don't make it the first or last character since so many pws have that
             fixedPW = pw.slice(0, loc1) + String.fromCharCode(char1) + pw.slice(loc1);
@@ -592,9 +665,6 @@ export module RuleFunctions {
             reasonWhy = "Most passwords contain no digits or digits in predictable places; doing otherwise makes your password harder to guess";
             sensitiveText = "Consider using ";
             sensitiveText += (digitCount + 1) + " or more digits";
-            //if(digitCount != 1) {
-            //	sensitiveText+="s";
-            //}
         }
 
         return {
@@ -617,7 +687,6 @@ export module RuleFunctions {
         var symbolCount = pw.replace(/[A-Za-z0-9]/g, "").length;;
         var publicText = "";
         var sensitiveText = "";
-        var problemText = "";
         var reasonWhy = "";
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
         // potentialTODO active?
@@ -628,9 +697,6 @@ export module RuleFunctions {
             reasonWhy = "Few passwords contain symbols, which makes passwords with symbols harder to guess";
             sensitiveText = "Consider using ";
             sensitiveText += (symbolCount + 1) + " or more symbols";
-            //if(symbolCount != 1) {
-            //	sensitiveText+="s";
-            //}
         }
 
         return {
@@ -924,7 +990,6 @@ export module RuleFunctions {
             problemText: problemText,
             deltas: deltas
         }
-
     }
 
     interface SymbolsPredictableComment {
@@ -1160,8 +1225,6 @@ export module RuleFunctions {
             }
             */
         }
-        //			var keyvectorsjoined = "[" + keyvectors.join("][") + "]";
-        //			return keyvectorsjoined;
         var score = longestmatchlength + 1; // these are the inter-key jumps, so add 1 to get length of string
         var publicText = "";
         var sensitiveText = "";
@@ -1217,7 +1280,7 @@ export module RuleFunctions {
                 pluralSuffix = "s";
             }
             var sensitiveText = "Have more variety than repeating the same " + uniques.length +
-                " character" + pluralSuffix + " ("+Helper.Helper.boldAll(uniques.sort()).toHumanString()+")";
+                " character" + pluralSuffix + " (" + Helper.Helper.boldAll(uniques.sort()).toHumanString() + ")";
             reasonWhy = "Passwords that use only a few different characters are easy for " +
                 "attackers to guess";
         }
@@ -1438,13 +1501,13 @@ export module RuleFunctions {
         var matchedSubstrings = new Array();
 
         pw = pw.toLowerCase();
-        const blacklistedSubstrings = Constants.Constants.blacklistedSubstrings;
-        for (var i = 0; i < blacklistedSubstrings.length; i++) {
-            while (pw.indexOf(blacklistedSubstrings[i]) != -1) {
-                matchedSubstrings.push(blacklistedSubstrings[i]);
+        const commonSubstrings = Constants.Constants.commonSubstrings;
+        for (var i = 0; i < commonSubstrings.length; i++) {
+            while (pw.indexOf(commonSubstrings[i]) != -1) {
+                matchedSubstrings.push(commonSubstrings[i]);
                 // put a space in there since no substrings contain one
                 // potentialTODO why not a nonprinting char?
-                pw = pw.replace(blacklistedSubstrings[i], " ");
+                pw = pw.replace(commonSubstrings[i], " ");
             }
         }
 
@@ -1510,7 +1573,7 @@ export module RuleFunctions {
         }
     }
 
-    interface BlacklistComment {
+    interface DomainSpecificWordsUsageComment {
         length: number;
         reasonWhy: string;
         publicText: string;
@@ -1518,41 +1581,50 @@ export module RuleFunctions {
         problemText: string;
         remaining: string;
     }
-    export function blacklist(pw: string): BlacklistComment {
+    export function generateDomainSpecificWordsUsageComment(pw: string): DomainSpecificWordsUsageComment {
         /* this function should, given a password and a set of site-specific words,
         return the number of characters in the password that are on that list of words */
 
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
         var helper = PasswordMeter.PasswordMeter.instance.getHelper();
-        // potentialTODO by config it's not a blacklist, rather a list of ignored words
-        var blacklistedWords = config.ignoredWords;
+
+        var domainSpecificWords = config.domainSpecificWords;
 
         var publicText = "";
         var sensitiveText = "";
         var problemText = "";
         var reasonWhy = "";
-        var remaining = pw; // the password with any blacklisted content, if any, removed
+        var remaining = pw; // the password with any domain-specifc words removed
 
         var wordsTheyShouldNotHaveUsed: Array<string> = [];
         var NONALPHA = new RegExp("[^A-Za-z]");
-        // lowercase and split the password:
+
+        // lowercase and split the password
         pw = pw.toLowerCase();
-        pw = pw.replace(/[-_ ]/g, ""); // remove characters that could delimit words
-        //20mostCommon var pwParts = pw.split(/[^a-z012345!&@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
-        var pwParts = pw.split(/[^a-z01345@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
-        pwParts = pwParts.filter(function (e) {
+        // remove characters that could delimit words	
+        pw = pw.replace(/[-_ ]/g, "");
+
+        // split password into parts that might contain dictionary
+        // words post-substitution; discard non-letters that won't be
+        // reverse substituted
+        var pwParts = pw.split(/[^a-z01345@$]+/);
+        pwParts = pwParts.filter(function(e) { // this removes empty strings, etc.
             return e
-        }); // this removes empty strings, etc.
-        var listofSS = pwParts.listSubstringsMinMax(1, undefined); // returns substrings in descending order of length
+        });
+
+        // returns substrings in descending order of length	
+        var listofSS = pwParts.listSubstringsMinMax(1, undefined);
 
         var i = 0; // loop variable that we will sometimes reset when we re-populate this list
         while (i < listofSS.length) {
             var foundMatch = "";
 
             var variantsToLookUp = new Array<Helper.Helper.Alternate>();
-            // potentialTODO magic number 14
+
             // don't try common substitutions for long passwords; the number of variants
             // adds up and may cause the code to hang
+            //
+            // potentialTODO magic number 14
             if (listofSS[i].match(NONALPHA) && pw.length <= 14) {
                 variantsToLookUp = helper.commonSubstitutions(listofSS[i]);
 
@@ -1566,7 +1638,7 @@ export module RuleFunctions {
             for (var z = 0; z < variantsToLookUp.length; z++) {
                 var currentVariant = variantsToLookUp[z].candidate;
                 // in each case, look up the variant, but push the unedited text back to the user
-                if (blacklistedWords.indexOf(currentVariant) > -1) {
+                if (domainSpecificWords.indexOf(currentVariant) > -1) {
                     wordsTheyShouldNotHaveUsed.push(listofSS[i]);
                     foundMatch = listofSS[i];
                 }
@@ -1579,9 +1651,11 @@ export module RuleFunctions {
                 // remove the matched substring from password parts.
                 for (var z = 0; z < pwParts.length; z++) {
                     var ssLocation = pwParts[z].indexOf(foundMatch);
-                    if (ssLocation > -1) { // remove; leave remainder of string
-                        pwParts.splice(z, 1, pwParts[z].substring(0, ssLocation), pwParts[z].substring(ssLocation + foundMatch.length));
-                        pwParts = pwParts.filter(function (e) {
+                    if (ssLocation > -1) {
+                        // remove; leave remainder of string
+                        pwParts.splice(z, 1, pwParts[z].substring(0, ssLocation),
+                            pwParts[z].substring(ssLocation + foundMatch.length));
+                        pwParts = pwParts.filter(function(e) {
                             return e
                         });
                         break;
@@ -1611,7 +1685,8 @@ export module RuleFunctions {
                             wordsTheyShouldNotHaveUsed[i].length);
                 }
             }
-            sensitiveText = "Don't use site-specific terms ("+Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString()+")";
+            sensitiveText = "Don't use site-specific terms (" +
+                Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString() + ")";
             reasonWhy = "Attackers target their attacks to words used on a particular service";
         }
 
@@ -1654,7 +1729,6 @@ export module RuleFunctions {
         var wikipediaArray = new Array<string>();
         var englishwordArray = new Array<string>();
 
-
         var registry = PasswordMeter.PasswordMeter.instance;
         var dictionaries = registry.getDictionaries();
         var helper = registry.getHelper();
@@ -1665,7 +1739,7 @@ export module RuleFunctions {
         // split the password:
         pw = pw.replace(/[-_ ]/g, ""); // remove characters that could delimit words
         var pwParts = pw.split(/[^A-Za-z012345!&@$]+/); // split password into parts that might contain dictionary words post-substitution; discard non-letters that won't be reverse substituted
-        pwParts = pwParts.filter(function (e) {
+        pwParts = pwParts.filter(function(e) {
             return e
         });
         // this removes empty strings, etc.
@@ -1761,7 +1835,7 @@ export module RuleFunctions {
                     var ssLocation = pwParts[z].indexOf(foundMatch);
                     if (ssLocation > -1) { // remove; leave remainder of string
                         pwParts.splice(z, 1, pwParts[z].substring(0, ssLocation), pwParts[z].substring(ssLocation + foundMatch.length));
-                        pwParts = pwParts.filter(function (e) {
+                        pwParts = pwParts.filter(function(e) {
                             return e
                         });
                         // that cleared out empty strings etc
@@ -1782,11 +1856,11 @@ export module RuleFunctions {
         var complaintLength = 0; // keep track of how many characters were in a wordlist
         var complaintTokens = 0; // keep track of how many separate tokens (words) were used
 
-        var boldList = function (foo: Array<string>): string {
+        var boldList = function(foo: Array<string>): string {
             return Helper.Helper.boldAll(foo.removeDuplicates()).toHumanString();
         };
 
-        var fillComplaints = function (array: Array<string>, text: string): void {
+        var fillComplaints = function(array: Array<string>, text: string): void {
             if (array.length > 0) {
                 publicComplaints.push(text);
                 for (var i = 0; i < array.length; i++) {
@@ -1853,7 +1927,7 @@ export module RuleFunctions {
 
         var passwordParts = [pw]; // as we start removing things, keep an array of the remaining parts
 
-        var dateanalyze = function (rx: RegExp): void {
+        var dateanalyze = function(rx: RegExp): void {
             var resultObj = helper.matchHelper(passwordParts, rx);
             if (resultObj.score > 0) {
                 score += resultObj.score;
@@ -1877,53 +1951,50 @@ export module RuleFunctions {
         // identify dates YYYYMMDD without delimiters?
 
         // identify dates MM-DD-YYYY with delimiters
-        var rx = new RegExp(MM+DEL+DD+DEL+YYYY, "g");
+        var rx = new RegExp(MM + DEL + DD + DEL + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM-YYYY with delimiters
-        var rx = new RegExp(DD+DEL+MM+DEL+YYYY, "g");
+        var rx = new RegExp(DD + DEL + MM + DEL + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates MM-DD-YY with delimiters
-        var rx = new RegExp(MM+DEL+DD+DEL+YY, "g");
+        var rx = new RegExp(MM + DEL + DD + DEL + YY, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM-YY with delimiters
-        var rx = new RegExp(DD+DEL+MM+DEL+YY, "g");
+        var rx = new RegExp(DD + DEL + MM + DEL + YY, "g");
         dateanalyze(rx);
 
         // identify dates MMDDYYYY without delimiters
-        var rx = new RegExp(MM+DD+YYYY, "g");
+        var rx = new RegExp(MM + DD + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates DDMMYYYY without delimiters
-        var rx = new RegExp(DD+MM+YYYY, "g");
+        var rx = new RegExp(DD + MM + YYYY, "g");
         dateanalyze(rx);
 
         // in the future, maybe consider identifying dates MMDDYY without any delimiters, but there seem to be lots of false positives
 
         // identify spelled-out months and recent year (4 digits)
-        var rx = new RegExp(MMMM+YYYY, "ig");
+        var rx = new RegExp(MMMM + YYYY, "ig");
         dateanalyze(rx);
 
         // identify spelled-out months and recent year (2 digits)
-        var rx = new RegExp(MMMM+YY, "ig");
+        var rx = new RegExp(MMMM + YY, "ig");
         dateanalyze(rx);
 
         // identify dates MM-DD with delimiters/
-        var rx = new RegExp(MM+DEL+DD, "g");
+        var rx = new RegExp(MM + DEL + DD, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM with delimiters/
-        var rx = new RegExp(DD+DEL+MM, "g");
+        var rx = new RegExp(DD + DEL + MM, "g");
         dateanalyze(rx);
 
         // identify recent years between 1900 and 2049
         var rx = new RegExp(YYYY, "g");
         dateanalyze(rx);
-
-        //console.log(datesUsed);
-        //console.log(passwordParts);
 
         if (score > 0) {
             publicText = "Avoid using dates";
@@ -2063,7 +2134,6 @@ export module RuleFunctions {
         var publicText = "";
         var sensitiveText = "";
         var reasonWhy = "";
-        //var problemText = "";
         var score = 0;
         var pw = pw.replace(/[A-Z]/g, "U"); // replace uppercase letters with U (do this first since U is uppercase!)
         var pw = pw.replace(/[a-z]/g, "L"); // replace lowercase letters with L
@@ -2072,7 +2142,6 @@ export module RuleFunctions {
         var whereInArray = Constants.Constants.commonStructures.indexOf(pw);
         if (whereInArray >= 0) {
             score = numStructures - whereInArray;
-            //problemText = "";
             reasonWhy = "One technique attackers use is to try all possible passwords within common structures, or arrangements of character classes (e.g., where lowercase letters and digits are located)";
             publicText = "The way you structure your password is predictable";
             sensitiveText = publicText + " (";

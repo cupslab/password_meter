@@ -1,10 +1,14 @@
 # Password Meter
 
-This project implements a data-driven password meter. Its effects on password security and usability were evaluated in the following publication: Ur et al. "Design and Evaluation of a Data-Driven Password Meter." In the Proceedings of CHI, 2017. https://dl.acm.org/citation.cfm?id=3026050
+This project implements a data-driven password meter. Its effects on password security and usability were evaluated in the following publication: Ur et al. "Design and Evaluation of a Data-Driven Password Meter." In the Proceedings of CHI, 2017. https://dl.acm.org/citation.cfm?id=3026050.
 
-The project is written in TypeScript, which transcompiles to JavaScript.
+The original implementation of this password meter ([v1.0](https://github.com/cupslab/password_meter/releases/tag/v1.0)) has been extended to include additional support for minimum-strength and blocklist requirements ([v2.0](https://github.com/cupslab/password_meter/releases/tag/v2.0)). Password-policy configurations based on these new requirement types were evaluated in the following publication: J. Tan, L. Bauer, N. Christin, and L. F. Cranor. "Practical recommendations for stronger, more usable passwords combining minimum-strength, minimum-length, and blocklist requirements." In the Proceedings of CCS, 2020. https://dl.acm.org/doi/10.1145/3372297.3417882
 
-An online demo of the meter is available at https://cups.cs.cmu.edu/meter/
+This project uses the [Pwned Passwords API](https://haveibeenpwned.com/API/v3#PwnedPasswords) to check for previously leaked passwords.
+
+The majority of this project is written in TypeScript, which transcompiles to JavaScript. Two JavaScript libraries ([hibp-js](https://github.com/mehdibo/hibp-js) and [bloom-filter-js](https://github.com/bbondy/bloom-filter-js)) were also used in this project, with minor modifications.
+
+An online demo of the meter is available at https://cups.cs.cmu.edu/meter2/
 
 
 ## Contact
@@ -14,19 +18,17 @@ password-guessability@cs.cmu.edu
 
 ## Deploying (minimal customization required)
 
-Many potential users of the meter will not need to re-transcompile from TypeScript to JavaScript. Instead, such users can use the code in the /example directory, which contains a ready-to-run environment for the password meter. The primary HTML file is index.html. 
+Many potential users of the meter will not need to re-transcompile from TypeScript to JavaScript. Instead, such users can use the code in the /example directory, which contains a ready-to-run environment for the password meter. The primary HTML file is index.html. The password-policy requirements and other meter configuration can be set by editing parameters defined in config_policy_meter.js.
 
-We expect that most people who take advantage of the example files will nonetheless edit three sets of common configurations that are made in "passwordMeterConfig" within the /example/index.html file: 
+We expect that most people who take advantage of the example files will edit two sets of common configurations that are made available in config_policy_meter.js:
 
-1) "ignoredWords" should be updated to contain a list of site-specific words that should count for nothing in the password. We currently provide a small set of examples specific to CMU.
+1) "domainSpecificWords" should be updated to contain a list of site-specific words that should count for nothing in the password. We currently provide a small set of examples specific to CMU.
 
-2) A number of variables (length, classCount, classRequire, classAllow, forbidPasswords, forbidChars, repeatChars, and usernameDifference) define the site's mandated password-composition policy. In the example file, it is set to require only that passwords contain 8 or more characters and are not one of 25 extremely common passwords. The other dimensions are currently set to inactive, but can be enabled by simply editing these variables.
-
-3) An additional variable (forbiddenPasswords) specifies whether or not to forbid passwords on a larger blacklist of ~100,000 common passwords taken from Mark Burnett's Xato.net corpus. In our example, it is currently set to active. For our research supporting this decision, please see: http://www.blaseur.com/papers/usec2017-blacklists.pdf
+2) A number of variables (minLogNnGuessNum, length, prohibitKnownLeaked, etc.) define the site's mandated password-composition policy. In the example file, it is set to require a 1c12+NN10 policy that also prohibits known leaked passwords reported by the Pwned Passwords API. The other dimensions are currently set to inactive, but can be enabled by simply editing these variables.
 
 Beyond these configuration decisions, we expect that people who deploy our meter will edit the layout in /example/index.html and /example/config.css 
 
-Note that running the meter's code locally (e.g., from your computer's local hard disk) with browsers' default settings will not load the dictionary files (dictionary-*), and as a result no feedback will be given based on the use of dictionary words or common passwords, nor will the blacklist be active. In contrast, if loaded from a web server (e.g., Apache), these files will be loaded correctly.
+Note that running the meter's code locally (e.g., from your computer's local hard disk) with browsers' default settings will not load the dictionary files (dictionary-*), and as a result no feedback will be given based on the use of dictionary words or common passwords. In contrast, if loaded from a web server (e.g., Apache), these files will be loaded correctly.
 
 Note also that the meter expects all files to be in the same directory as each other.
 
@@ -38,7 +40,7 @@ Note also that the meter expects all files to be in the same directory as each o
   * Then run npm run do-browserify to generate the PasswordMeter.js file
   * Place the PasswordMeter.js file with the other web files (i.e., in the /example directory)
 
-Finally, the neural network that estimates password strength needs to be trained for a site's particular password-composition policy. The parameter files must be provided in the configuration. The example neural network files we provide (/example/basic_3M.*) are trained for a 1class8 policy and will not provide accurate strength estimates for passwords created under different policies. For more detail on training the neural network, please see https://github.com/cupslab/neural_network_cracking
+Finally, the neural network that estimates password strength needs to be trained for a site's particular password-composition policy. The parameter files must be provided in the configuration. The example neural network files we provide (/example/tfjs_1c8/*) are trained for a 1class8 policy and may not provide accurate strength estimates for passwords created under different policies. For more detail on training the neural network, please see https://github.com/cupslab/neural_network_cracking
 
 
 ## Dependencies
@@ -65,9 +67,7 @@ To set up the meter, define the following global variables for the above depende
 
 We label each file with its intended purpose within the meter: main file; neural network computation; visual layout; dictionary; required external library
 
-  * **basic_3M.info_and_guess_numbers.no_bloomfilter.json** (Neural network computation) A JSON encoding of a pre-computed mapping of estimating a password's guess number from its probability by using Monte Carlo methods. This is a companion file to the one that follows. This file is for a 1class8 policy, and for other policies should be retrained using https://github.com/cupslab/neural_network_cracking 
-
-  * **basic_3M.weight_arch.quantized.fixed_point1000.zigzag.nospace.json** (Neural network computation) A JSON encoding of the artificial neural network we computed using a 3~MB (before optimizations and compression) network in which probabilities have been quantized and stored used fixed-point encoding and ZigZag encoding. The weights have been quantized to three decimal digits, as well. This model ignores letter capitalization, which must be post-processed. This file is for a 1class8 policy, and for other policies should be retrained using https://github.com/cupslab/neural_network_cracking
+  * **tfjs_1c8/** Contains files describing TensorFlowJS saved model parameters, architecture, and JSON encoding of a pre-computed mapping of estimating a password's guess number from its probability by using Monte Carlo methods. These files are for a 1class8 policy, and for other policies should be retrained using https://github.com/cupslab/neural_network_cracking 
 
   * **bootstrap.min.css** (Required external library) The Bootstrap library (version 3.3.6), minified http://getbootstrap.com/
 
@@ -75,7 +75,7 @@ We label each file with its intended purpose within the meter: main file; neural
 
   * **config.css** (Visual layout) The primary configuration settings for the meter's visual design are located in this file. These settings include colors, fonts, sizes, and border radii.
 
-  * **dictionary-blacklist1c8-compressed.txt** (Dictionary) An LZW compressed version of the 96,480 passwords containing at least 8 characters that appear in the Xato.net corpus of passwords at least four times. These form our optional blacklist of common 1class8 passwords. 
+  * **dictionary-blacklist1c8-compressed.txt** (Dictionary) An LZW compressed version of the 96,480 passwords containing at least 8 characters that appear in the Xato.net corpus of passwords at least four times.
 
   * **dictionary-englishwords-compressed.txt** (Dictionary) An LZW compressed version of 80,031 frequently used English words taken from the intersection of the BYU Corpus of Contemporary American English (COCA) and the UNIX dictionary.
 
@@ -104,11 +104,9 @@ We label each file with its intended purpose within the meter: main file; neural
 
 We tested and iteratively updated many prioritizations of the feedback we provided users in the standard meter. For each advanced heuristic, if the associated function has feedback relevant to that particular password, it returns a non-empty string for both publicFeedback and sensitiveFeedback. If it does not have feedback, which occurs when that heuristic does not indicate a predictable pattern, it returns the empty string. We traverse the list of functions in descending priority for the first (up to) three pieces of feedback to give the user. If, however, our scoring functions rate the password such that its score fills the bar, we ignore all text feedback and tell the user that his or her password appears strong.
 
-The list of functions that provide feedback, in descending order of priority, is as follows:
+The list of functions that provide feedback, in descending order of priority, includes:
 
   * **contextual()** returns the password after removing the longest string of five or more contiguous characters of the password that overlap (case-insensitive) with the user's chosen username. If there is no such overlap, the function returns the original password.
-
-  * **blacklist()** returns the password after removing all occurences of a service-specific substring blacklist of terms very closely related to the service. The site-specific blacklist for Carnegie Mellon, for instance, might contain terms like "carnegie," "mellon," "cmu," "education," "tartans," "andrew," and other terms closely associated with the institution.  If there is no such overlap, the function returns the original password.
 
   * **combinedDictCheck()** returns three values. First, it returns the number of characters in the password contained from any of the following sources: the 234 most popular pet names; the 2,500 most popular male and 2,500 most popular female names according to the U.S. census; the top 50,000 three-word phrases used on Wikipedia; frequently used English words taken from the intersection of the BYU Corpus of Contemporary American English (COCA) 100,000 most frequent 1-grams and the Unix dictionary; the 100,000 top single words (1-grams) used on Wikipedia. For each list, we removed those that were internal duplicates (e.g., some common male and female names are identical, and some distinct three-word phrases appear the same after removing spaces and punctuation), and we also removed any that appeared on a list above it (following the order listed above) or was a keyboard pattern, string of a single character repeated, or alphabetic/numeric sequence. In addition to checking for these words in a case-insensitive manner, we also evaluate whether a transformation of these words is present by reversing all instances of the 10 most common character substitutions in passwords. For instance, if the user's password contains a "4," we will evaluate whether replacing that character by an "a" or "for" leads to the password containing a dictionary word. The commonness of the substitution (what percentage of all substitutions follow that particular rule is the second value returned by this function. It also returns the number of distinct dictionary tokens (e.g., a password that contains two separate dictionary words contains two tokens) as the third value.
 
