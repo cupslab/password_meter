@@ -2,12 +2,14 @@
 // globals on entry:
 // $ for JQuery (infected with Bootstrap)
 // LZString for LZString
+// log for LogLevel
 // optional passwordMeterConfig for configuration
 
 
 
 import JQuery = require("jquery");
 import LZString = require("lz-string");
+import LogLevel = require("loglevel");
 //potentialTODO bootstrap has infected jquery already
 //import Bootstrap = require("bootstrap");
 import Helper = require("./helper");
@@ -42,6 +44,14 @@ export module PasswordMeter {
 
         getLzstring(): LZString.LZStringStatic {
             return this.data["lzstring"];
+        }
+
+        setLog(log: LogLevel.Logger): void {
+            this.data["log"] = log;
+        }
+
+        getLog(): LogLevel.Logger {
+            return this.data["log"];
         }
 
         setHelper(helper: Helper.Helper.Helper): void {
@@ -90,8 +100,10 @@ export module PasswordMeter {
     export var instance = new Registry();
     instance.setJquery($);
     declare var LZString: LZString.LZStringStatic;
+    declare var log: LogLevel.Logger;
     instance.setLzstring(LZString);
-    var helper = new Helper.Helper.Helper($, LZString, true);
+    instance.setLog(log);
+    var helper = new Helper.Helper.Helper($, LZString, log);
     instance.setHelper(helper);
 
     declare var passwordMeterConfig: Config.Config.Config;
