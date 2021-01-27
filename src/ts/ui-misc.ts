@@ -235,6 +235,12 @@ export module UIMisc {
 			} else {
 				pw = this.$("#pwbox").val() as string;
 			}
+
+			// Is there a point to calculate for an empty password?
+			if (0 === pw.length) {
+				return;
+			}
+
 			var username = this.$("#usernamebox").val() as string;
 			var ratingsComplete = 0;
 			if (typeof (this.neuralnetMapping[pw]) === "undefined") {
@@ -387,7 +393,7 @@ export module UIMisc {
 				}
 			}
 			log.debug("result for password: " + fixedpw + " heuristic: "
-					+ this.heuristicMapping[fixedpw] + " neuralnet: ("
+					+ this.heuristicMapping[fixedpw] + " neuralnet: "
 					+ this.neuralnetMapping[fixedpw] + " scores: " + numberOfScores);
 			// When we have a sufficiently strong concrete suggestion, 
 			// find all original passwords that include that as a potential fix 
@@ -440,7 +446,7 @@ export module UIMisc {
 				&& typeof (this.recommendedFixesTries[currentpw]) !== "undefined"
 				&& this.recommendedFixesTries[currentpw] < 8) {
 				// Try to generate a better concrete suggestion
-				log.info("trying again on " + fixedpw + " as current password is " + currentpw);
+				log.info("trying again on " + fixedpw + " as current password is still " + currentpw);
 				this.generateCandidateFixed(fixedpw, 0, currentpw);
 			}
 			return 1;
