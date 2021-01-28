@@ -8,9 +8,12 @@ declare class NeuralNetworkClient {
 }
 
 export module NeuralNetwork {
-	var verboseMode = false;
 	// In case neural nets don't load, don't wait to give a score
 	var neverHeardFromNN = true;
+
+	// mapping of passwords to score based on neural networks
+	// TODO(josh): use Least Recently Used cache so mapping doesn't grow too large
+	var neuralNetMapping: { [key: string]: number } = {};
 
 	// Helper function designed to post-process neural network guess numbers
 	// to account for capitalization. 
@@ -42,77 +45,68 @@ export module NeuralNetwork {
 	}
 
 	// Math.log10 is not universal yet
-	function log10(x: number): number {
+	// XXXstroucki put this elsewhere?
+	export function log10(x: number): number {
 		return Math.log(x) / Math.LN10;
+	}
+
+	// 1. if NN num is a finite number but negative or 0, map to log10(1.1) ~= 0.04
+	// 2. as long as password is not empty string (""), if NN is +infinity, then map to 100 percent
+	//    (due to NN bug, empty string maps to positive +infinity also; don't map to 100 for that case)
+	// 3. if NN is not a number
+    function postProcessNnNumAndCache(result: number, password: string): void {
+
+		// Make 10^15 guesses fill 2/3rds of meter
+		const scaleToMeter = 67 / 15;
+
+		var instance = PasswordMeter.PasswordMeter.instance;
+		var nni = instance.getNN();
+
+		result = result * uppercasePredictabilityPostProcessing(password);
+
+		neverHeardFromNN = false;
+		var value = log10(result);
+		// With estimates, we can get fractional/negative guess numbers
+		// for terrible passwords, so compensate to have a very small number
+		if (result <= 1) {
+			value = log10(1.1);
+		}
+		// Neural nets give infinity for empty passwords, hence check length
+		if (password.length > 0 && result == Number.POSITIVE_INFINITY) {
+			value = 100;
+		}
+		// if result is undefined for some reason, just store -1
+		// as NN, so meter will ignore that passwords NN number
+		if (isNaN(result)) {
+			value = -1;
+		}
+
+		nni.setNeuralNetNum(password, value);
 	}
 
 	// The main callback function for the neural network evaluation.
 	// When it returns, it will display the rating (update the UI).
 	function nnCallback(result: number, password: string): void {
-		// Make 10^15 guesses fill 2/3rds of meter
-		const scaleToMeter = 67 / 15;
-
 		var instance = PasswordMeter.PasswordMeter.instance;
 		var UI = instance.getUI();
-		var log = instance.getLog();
 
-		result = result * uppercasePredictabilityPostProcessing(password);
-		log.info(password + " is NN guess # " + result);
-
-		neverHeardFromNN = false;
-		var value = log10(result) * scaleToMeter;
-		// With estimates, we can get fractional/negative guess numbers
-		// for terrible passwords, so compensate to have a very small number
-		if (result <= 1) {
-			value = log10(1.1) * scaleToMeter;
-		}
-		if (isNaN(result)) {
-			value = -1;
-		}
-		// Neural nets give infinity for empty passwords, hence check length
-		if (password.length > 0 && result == Number.POSITIVE_INFINITY) {
-			value = 100;
-		}
-		UI.setNeuralnetMapping(password, value);
+		postProcessNnNumAndCache(result, password);
 		UI.displayRating(password);
 	}
 
-	// potentialTODO except for the logging, this looks exactly the same as above
 	// This alternate callback function is used instead when evaluating 
 	// concrete suggestions for a better password
 	export function nnFixedCallback(result: number, password: string): void {
-		// Make 10^15 guesses fill 2/3rds of meter
-		const scaleToMeter = 67 / 15;
-
 		var instance = PasswordMeter.PasswordMeter.instance;
 		var UI = instance.getUI();
-		var log = instance.getLog();
 
-		result = result * uppercasePredictabilityPostProcessing(password);
-		log.info("Fixed possibility " + password + " is NN guess # " + result);
-
-		neverHeardFromNN = false;
-		var value = log10(result) * scaleToMeter;
-
-		// With estimates, we can get fractional/negative guess numbers
-		// for terrible passwords, so compensate to have a very small number
-		if (result <= 1) {
-			value = log10(1.1) * scaleToMeter;
-		}
-		if (isNaN(result)) {
-			value = -1;
-		}
-		// Neural nets give infinity for empty passwords, hence check length
-		if (password.length > 0 && result == Number.POSITIVE_INFINITY) {
-			value = 100;
-		}
-		UI.setNeuralnetMapping(password, value);
+		postProcessNnNumAndCache(result, password);
 		UI.synthesizeFixed(password);
 	}
 
 	export class NeuralNetworkInterface {
-		nnfixed: NeuralNetworkClient;
 		nn: NeuralNetworkClient;
+		nnfixed: NeuralNetworkClient;
 
 		constructor(nn: NeuralNetworkClient, nnfixed: NeuralNetworkClient) {
 			this.nn = nn;
@@ -122,12 +116,29 @@ export module NeuralNetwork {
 		public heardFromNn(): boolean {
 			return !neverHeardFromNN;
 		}
+
+		// set the mapping from the neural network
+		public setNeuralNetNum(pw: string, value: number): void {
+			neuralNetMapping[pw] = value;
+		}
+
+		// set the mapping from the neural network
+		public getNeuralNetNum(pw: string): number {
+			return neuralNetMapping[pw];
+		}
+
+		// initiate NN guess number lookup
+		public queryGuessNumber(pw: string, isConcreteSuggestionCandidate: boolean): void {
+			if (isConcreteSuggestionCandidate) {
+				this.nnfixed.query_guess_number(pw);
+			} else {
+				this.nn.query_guess_number(pw);
+			}
+		}
 	}
 
 	(function () {
 		var registry = PasswordMeter.PasswordMeter.instance;
-		var jquery = registry.getJquery();
-		var lzstring = registry.getLzstring();
 		var config = registry.getConfig();
 
 		var neuralNetworkConfig = config.neuralNetworkConfig;

@@ -1,4 +1,4 @@
-// test 8 dimensions of composition requirements as follows:
+// test 9 dimensions of composition requirements as follows:
 //   dimension 1: length (min / max)
 //   dimension 2: mandatory # of character classes
 //   dimension 3: mandatory character classes
@@ -7,6 +7,7 @@
 //   dimension 6: permitted/forbidden characters
 //   dimension 7: repeated consecutive characters
 //   dimension 8: password - username comparison
+//   dimension 9: NN complexity
 
 import PasswordMeter = require("./PasswordMeter");
 
@@ -56,6 +57,12 @@ interface ConfigLimit {
     limit: number;
 }
 
+interface ConfigThreshold {
+    active: boolean;
+    threshold: number;
+    rejectionFeedback: string;
+}
+
 export interface ConfigNeuralNetwork { // raise visibility because we pass it on to a dependency
     intermediate: string;
     file: string;
@@ -77,6 +84,7 @@ export interface Config {
     forbidChars: ConfigForbidChars;
     repeatChars: ConfigLimit;
     usernameDifference: ConfigLimit;
+    minLogNnGuessNum: ConfigThreshold;
     neuralNetworkConfig: ConfigNeuralNetwork;
 }
 
@@ -139,6 +147,11 @@ export var passwordMeterDefaultConfig: Config = {
     usernameDifference: {
         active: true,
         limit: 1, // prohibit passwords being N or fewer characters different than username
+    },
+    minLogNnGuessNum: {
+        active: false,
+        threshold: 7, // prohibit passwords with a NN guess number less than 10^7
+        rejectionFeedback: "Not be similar to extremely common passwords",
     },
     neuralNetworkConfig: {
         intermediate: "basic_3M.info_and_guess_numbers.no_bloomfilter.json",

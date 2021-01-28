@@ -5,6 +5,7 @@ import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import RuleFunctions = require("./rulefunctions");
+import Constants = require("./constants");
 
 export module UIMisc {
 	export class UIMisc {
@@ -28,8 +29,7 @@ export module UIMisc {
 		// -1 means that we already spawned a thread to perform this calculation, so don't duplicate it
 		// Mapping of passwords to score based on advanced heuristics
 		private heuristicMapping: {[key: string]: number} = {};
-		// Mapping of passwords to score based on neural networks
-		private neuralnetMapping: {[key: string]: number} = {};
+
 		// Mapping of passwords to public/sensitive feedback
 		// potentialTODO that could get expensivex
 		// potentialTODO structure this
@@ -218,6 +218,16 @@ export module UIMisc {
 			}
 		}
 
+		// translate NN guess number to a percentage-based score (based on stringency configuration).
+		// this will influence meter fill.
+		nnNumtoScoreAsPercent(nnNum: number): number {
+			if (nnNum > 0) {
+				return nnNum * Constants.Constants.METER_STRINGENCY_SCALE_FACTOR;
+			} else {
+				return nnNum;
+			}
+		}
+
 		// The main function for starting the password-rating process.
 		// This function determines whether we've already calculated scores for 
 		// a given password using both heuristics and neural networks. 
@@ -243,13 +253,14 @@ export module UIMisc {
 
 			var username = this.$("#usernamebox").val() as string;
 			var ratingsComplete = 0;
-			if (typeof (this.neuralnetMapping[pw]) === "undefined") {
+			var nnNum = nni.getNeuralNetNum(pw);
+			if (typeof (nnNum) === "undefined") {
 				// Signal that we are calculating it to avoid duplicate work
-				this.neuralnetMapping[pw] = -1;
+				nni.setNeuralNetNum(pw, -1);
 				// Asynchronously calculate neural network guess number
 				log.debug("sending "+pw+" to normal client");
-				nn.query_guess_number(pw);
-			} else if (this.neuralnetMapping[pw] >= 0) {
+				nni.queryGuessNumber(pw, false);
+			} else if (nnNum >= 0) {
 				ratingsComplete++;
 			}
 			if (typeof (this.heuristicMapping[pw]) === "undefined") {
@@ -318,6 +329,13 @@ export module UIMisc {
 				deltas = deltas.slice(0, loc1).concat(1, deltas.slice(loc1));
 			}
 
+			// score the candidate in the background, if needed
+			var nni = PasswordMeter.PasswordMeter.instance.getNN();
+			if (typeof (nni.getNeuralNetNum(modifiedPW)) === "undefined") {
+			nni.setNeuralNetNum(modifiedPW, -1); // signal that we are calculating it to avoid duplicate work
+			nni.queryGuessNumber(modifiedPW, true); // asynchronously calculate neural network guess number
+			}
+
 			// Check the modification's compliance with the password-composition policy
 			var currentUsername = this.$("#usernamebox").val() as string;
 
@@ -355,17 +373,11 @@ export module UIMisc {
 		spawnFixedRating(pw: string): void {
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var log = PasswordMeter.PasswordMeter.instance.getLog();
-			var nnFixed = nni.nnfixed;
 			var username = this.$("#usernamebox").val() as string;
-			if (typeof (this.neuralnetMapping[pw]) === "undefined") {
-				this.neuralnetMapping[pw] = -1; // signal that we are calculating it to avoid duplicate work
-				log.debug("sending "+pw+" to fixed client");
-				nnFixed.query_guess_number(pw); // asynchronously calculate neural network guess number
-			}
 			if (typeof (this.heuristicMapping[pw]) === "undefined") {
 				this.queryHeuristicGuessNumber(pw, username, false);
 				// To avoid duplicating call when the heuristic function returns
-			} else if (this.neuralnetMapping[pw] >= 0 && this.heuristicMapping[pw] >= 0) {
+			} else if (nni.getNeuralNetNum(pw) >= 0 && this.heuristicMapping[pw] >= 0) {
 				this.synthesizeFixed(pw);
 			}
 		}
@@ -376,6 +388,7 @@ export module UIMisc {
 		// It can only synthesize results, though, if both heuristics and neural 
 		// networks have returned.
 		synthesizeFixed(fixedpw: string): number {
+			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var overallScore: number = 0;
 			var numberOfScores: number = 0;
 			var changedAnyMappings: boolean = false;
@@ -384,17 +397,20 @@ export module UIMisc {
 				numberOfScores++;
 				overallScore = this.heuristicMapping[fixedpw];
 			}
-			if (typeof (this.neuralnetMapping[fixedpw]) !== "undefined"
-				&& this.neuralnetMapping[fixedpw] >= 0 && isFinite(this.neuralnetMapping[fixedpw])) {
+			var nnNum = nni.getNeuralNetNum(fixedpw);
+			var nnScoreAsPercent = this.nnNumtoScoreAsPercent(nnNum);
+
+			if (typeof (nnNum) !== "undefined"
+				&& nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
 				numberOfScores++;
 				if (overallScore === 0
-					|| (overallScore > 0 && this.neuralnetMapping[fixedpw] < overallScore)) {
-					overallScore = this.neuralnetMapping[fixedpw];
+					|| (overallScore > 0 && nnScoreAsPercent < overallScore)) {
+					overallScore = nnScoreAsPercent;
 				}
 			}
 			log.debug("result for password: " + fixedpw + " heuristic: "
 					+ this.heuristicMapping[fixedpw] + " neuralnet: "
-					+ this.neuralnetMapping[fixedpw] + " scores: " + numberOfScores);
+					+ nnScoreAsPercent + " scores: " + numberOfScores);
 			// When we have a sufficiently strong concrete suggestion, 
 			// find all original passwords that include that as a potential fix 
 			// and set it as the mapping
@@ -409,13 +425,15 @@ export module UIMisc {
 							&& this.heuristicMapping[j] >= 0) {
 							originalOverallScore = this.heuristicMapping[j];
 						}
-						if (typeof (this.neuralnetMapping[j]) !== "undefined"
-							&& this.neuralnetMapping[j] >= 0
-							&& isFinite(this.neuralnetMapping[j])) {
+						var nnNumFix = nni.getNeuralNetNum(j);
+						var nnScoreAsPercentFix = this.nnNumtoScoreAsPercent(nnNumFix);
+						if (typeof (nnNumFix) !== "undefined"
+							&& nnScoreAsPercentFix >= 0
+							&& isFinite(nnScoreAsPercentFix)) {
 							if (originalOverallScore === 0
 								|| (originalOverallScore > 0
-									&& this.neuralnetMapping[j] < originalOverallScore)) {
-								originalOverallScore = this.neuralnetMapping[j];
+									&& nnScoreAsPercentFix < originalOverallScore)) {
+								originalOverallScore = nnScoreAsPercentFix;
 							}
 						}
 						if (overallScore > (originalOverallScore + 15)) {
@@ -703,14 +721,10 @@ export module UIMisc {
 			}
 		}
 
-		// set the mapping from the neural network
-		setNeuralnetMapping(pw: string, value: number): void {
-			this.neuralnetMapping[pw] = value;
-		}
-
 		// Update all aspects of the UI (bar and text feedback) to reflect password. 
 		// Note that the password score and feedback was generated + cached in other functions.
 		displayRating(pw: string): void {
+			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var overallScore = 0;
 			var numberOfScores = 0;
 			if (pw.length > 0) {
@@ -719,12 +733,14 @@ export module UIMisc {
 					overallScore = this.heuristicMapping[pw];
 					numberOfScores++;
 				}
-				if (typeof (this.neuralnetMapping[pw]) !== "undefined"
-					&& this.neuralnetMapping[pw] >= 0 && isFinite(this.neuralnetMapping[pw])) {
+				var nnNum = nni.getNeuralNetNum(pw);
+				var nnScoreAsPercent = this.nnNumtoScoreAsPercent(nnNum);
+				if (typeof (nnNum) !== "undefined"
+					&& nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
 					numberOfScores++;
 					if (overallScore == 0 || (overallScore > 0
-						&& this.neuralnetMapping[pw] < overallScore)) {
-						overallScore = this.neuralnetMapping[pw];
+						&& nnScoreAsPercent < overallScore)) {
+						overallScore = nnScoreAsPercent;
 					}
 				}
 			}
@@ -732,7 +748,7 @@ export module UIMisc {
 				overallScore = pw.length / 2; // make people see at least some progess is happening
 			}
 
-			log.info(pw + " overall from heuristic (" + this.heuristicMapping[pw] + ") and neural nets (" + this.neuralnetMapping[pw] + ")");
+			log.info(pw + " overall from heuristic (" + this.heuristicMapping[pw] + ") and neural nets (" + nnScoreAsPercent + ")");
 
 			// Avoid errors in case the feedback mapping was somehow screwed up
 			if (typeof (this.feedbackMapping[pw]) === "undefined") {
@@ -972,8 +988,6 @@ export module UIMisc {
 			}
 
 			// Start trying to generate a concrete suggestion
-			var nni = PasswordMeter.PasswordMeter.instance.getNN();
-
 			if ((pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2)
 				&& minReqObj.compliant && typeof (this.fixedpwMapping[pw]) === "undefined"
 				&& overallScore < 100) {

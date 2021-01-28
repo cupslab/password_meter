@@ -1,7 +1,7 @@
 import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import Helper = require("./helper");
-import Dictionaries = require("./dict-misc");
+import NeuralNetwork = require("./nn-misc");
 import Constants = require("./constants");
 
 /* ************** */
@@ -413,6 +413,33 @@ export module RuleFunctions {
                 explanation["usernameDifference"] = thisExplanation;
             }
             compliance["usernameDifference"] = compliant;
+        }
+
+        // dimension 9: min NN guess number requirement
+        if (config.minLogNnGuessNum.active) {
+            var compliant = false;
+            var thisExplanation = "";
+            var minLogNnGuessNum = config.minLogNnGuessNum.threshold;
+            var nni = PasswordMeter.PasswordMeter.instance.getNN();
+            var conservativeNnNum = nni.getNeuralNetNum(pw);
+            var unconservativeNnNum = conservativeNnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.scaleFactor);
+
+            if (conservativeNnNum < 0) {
+                log.debug("looking up NN guess number: " + pw);
+            } else if (conservativeNnNum > minLogNnGuessNum) {
+                compliant = true;
+                log.debug("high enough NN guess number: " + pw + " (" + conservativeNnNum +
+                    " > " + minLogNnGuessNum + ") [unconservative NN guess number: " + unconservativeNnNum + "]");
+            } else {
+                log.debug("too low NN guess number: " + pw + " (" + conservativeNnNum +
+                    " < " + minLogNnGuessNum + ") [unconservative NN guess number: " + unconservativeNnNum + "]");
+                    thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
+            }
+
+            if (!compliant) {
+                explanation["minLogNnGuessNum"] = thisExplanation;
+            }
+            compliance["minLogNnGuessNum"] = compliant;
         }
 
         // potentialTODO reduce operation
