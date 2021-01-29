@@ -267,46 +267,45 @@ export module RuleFunctions {
             compliance["classAllow"] = compliant;
         }
 
-        //   dimension 5: forbidden passwords
-        // potentialTODO how much of this is covered by forbidPasswords?
-        if (config.forbidPasswords.active) {
-            // potentialTODO put this under forbidPasswords?
-            var forbiddenPasswords = config.forbiddenPasswords;
-            var includelargerlist = config.forbidPasswords.includeLargerList;
-            var thisExplanation = "";
-            var compliant = false;
+                        //   dimension 5: forbidden passwords
+                        if (config.blacklist.active) {
+                            var thisExplanation = "";
+                            var compliant = false;
 
-            // explain
-            thisExplanation = "Not be an extremely common password";
+                            // explain
+                            thisExplanation = "Not be an extremely common password";
 
-            // check
-            // if it's in our small array from the config file OR,
-            // assuming we included the larger list, it's on that list (case-insensitive)
+                            // XXXstroucki is this used?
+                            var isBlacklisted = false;
 
-            // potentialTODO use Array.contains? no strictness.
-            if (pw.length === 0 || forbiddenPasswords.indexOf(pw.toLowerCase()) === -1) {
-                if (includelargerlist) {
-                    if (pw.length === 0 || dictionaries.passwordsDict[pw.toLowerCase()] !== true) {
-                        compliant = true;
-                    }
-                } else {
-                    compliant = true;
-                }
-            }
+                            // check
+                            if (pw.length > 0) {
 
-            // report
-            // note that we are only complaining about disallowed passwords if they use one
-            if (compliant) {
-            } else {
-                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
+                                var stringToCheck = pw; // default is case-sensitive fullstring
+                                if (config.blacklist.stripDigitsSymbolsFromPassword) {
+                                    stringToCheck = stringToCheck.replace(/[^a-zA-Z]/gi, '');
+                                }
+                                if (!config.blacklist.caseSensitive) {
+                                    stringToCheck = stringToCheck.toLowerCase();
+                                }
+                            }
+                            compliant = !isBlacklisted ||
+                            pw.length === 0 ||
+                                (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
 
-            }
+                            // report
+                            // note that we are only complaining about disallowed passwords if they use one
+                            if (compliant) {
+                            } else {
+                                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
 
-            if (!compliant) {
-                explanation["forbidPasswords"] = thisExplanation;
-            }
-            compliance["forbidPasswords"] = compliant;
-        }
+                            }
+
+                            if (!compliant) {
+                                explanation["blacklist"] = thisExplanation;
+                            }
+                            compliance["blacklist"] = compliant;
+                        }
 
         //   dimension 6: forbidden/permitted characters
         if (config.forbidChars.active) {
@@ -424,6 +423,7 @@ export module RuleFunctions {
             var conservativeNnNum = nni.getNeuralNetNum(pw);
             var unconservativeNnNum = conservativeNnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.scaleFactor);
 
+            // check
             if (conservativeNnNum < 0) {
                 log.debug("looking up NN guess number: " + pw);
             } else if (conservativeNnNum > minLogNnGuessNum) {
@@ -442,6 +442,29 @@ export module RuleFunctions {
             compliance["minLogNnGuessNum"] = compliant;
         }
 
+
+        // dimension 10: same character (repeated in password but not consecutively)
+        if (config.sameChars.active) {
+            var sameCharsLimit = config.sameChars.limit;
+            var thisExplanation = "";
+            var compliant = false;
+
+            // explain
+            if (pw.length >= config.sameChars.lengthException || (satisfiesMaxChar(pw, sameCharsLimit))) {
+                compliant = true;
+            }
+            else {
+                thisExplanation = "Not contain the same character more than " + sameCharsLimit.toString() + "+ times";
+            }
+
+            // report (only explain if violate requirement)
+            if (!compliant) {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
+                explanation["sameChars"] = thisExplanation;
+            }
+            compliance["sameChars"] = compliant;
+        }
+
         // potentialTODO reduce operation
         var overallCompliance: boolean = true;
         for (const item in compliance) {
@@ -458,6 +481,23 @@ export module RuleFunctions {
         };
 
         return ret;
+    }
+
+    // find out whether a character occurs more than allowed
+    function satisfiesMaxChar(pw: string, maxAllowed: number): boolean {
+        var pwChars: { [key: string]: number } = {};
+        for (var i = 0; i < pw.length; i++) {
+            var pwChar = pw.charAt(i);
+            if (pwChar in pwChars) {
+                pwChars[pwChar] = pwChars[pwChar] + 1;
+                if (pwChars[pwChar] > maxAllowed) {
+                    return false;
+                }
+            } else {
+                pwChars[pwChar] = 1;
+            }
+        }
+        return true;
     }
 
     interface PwLengthComment {
@@ -2041,7 +2081,7 @@ export module RuleFunctions {
                     longestSeqStart = currentSeqStart;
                     longestSeqEnd = currentSeqEnd;
                 }
-            
+
                 var score = longestSeqEnd - longestSeqStart + 1;
                 */
             var score = longestmatchlength;

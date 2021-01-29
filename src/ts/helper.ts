@@ -3,6 +3,7 @@ import JQuery = require("jquery");
 import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import LogLevel = require("loglevel");
+import BloomFilter = require("bloom-filters");
 
 export module Helper {
 	interface MatchFoo {
@@ -95,6 +96,46 @@ export module Helper {
 				log.debug("Decompressed and loaded " + added + " words to the dictionary.");
 			});
 			return dict;
+		}
+
+		compressedFileToBloomFilter(path: string, blacklistSubstringLength: number): BloomFilter.BloomFilter {
+			// "The 1% false-positive rate can be reduced by a factor of ten
+			// by adding only about 4.8 bits per element."
+			// "By using 10 bits per element youll have roughly 1% chance of false positives."
+			// so: use 15 bits for ~.1% error or .001 error rate rate
+
+			var bloomBitsPerElement = 15;
+			var bloomEstimatedNumElements = 425000;
+			var bloomer = new BloomFilter.BloomFilter(bloomEstimatedNumElements, bloomBitsPerElement);
+			var wordsAdded = 0;
+			var startTime = Date.now();
+			var substringsAdded = 0;
+			var fLZString = this.LZString;
+
+			this.$.get(path, function(s) {
+
+				var decompressed = fLZString.decompressFromEncodedURIComponent(s);
+				var words = decompressed.split(",");
+				for (var i = 0; i < words.length; i++) {
+
+					var blWord = words[i];
+					wordsAdded++;
+
+					// add substrings
+					if (blWord.length > blacklistSubstringLength) {
+						var numSubstrings = blWord.length - blacklistSubstringLength + 1;
+
+						for (var j = 0; j < numSubstrings; j++) {
+							var blSubstring = blWord.substring(j, j + blacklistSubstringLength);
+							bloomer.add(blSubstring);
+							substringsAdded++;
+						}
+					}
+				}
+				var timeTaken = Date.now() - startTime;
+				log.debug("Decompressed and loaded " + substringsAdded + " length-" + blacklistSubstringLength + " substrings (derived from a " + wordsAdded + "-word list) into a Bloom filter" + " [took " + timeTaken + "ms]");
+			});
+			return bloomer;
 		}
 
 		// loads a file (of passwords) to an array

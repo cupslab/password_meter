@@ -1,22 +1,59 @@
 import PasswordMeter = require("./PasswordMeter");
-import Helper = require("./helper")
+import Helper = require("./helper");
+import Bloom = require("bloom-filters");
+import Config = require("./config");
 
 export module Dictionaries {
     export type Dictionary = { [key: string]: boolean };
+    export type BloomFilter = Bloom.BloomFilter;
 
     export class Dictionaries {
-        blacklistDict: Dictionary;
         namesDict: Dictionary;
         phrasesDict: Dictionary;
-        passwordsDict: Dictionary;
+        passwordsDict: Dictionary; // josh: keep around, used in rulefunction.ts > commonPwCheck
+        // load dictionary-passwords-compressed.txt into it
         englishwordsDict: Dictionary;
+        blacklistDict: Dictionary; // josh: use this for blacklist rule, not passwordsDict
+        blacklistBloom: BloomFilter;
         wikipediaDict: Dictionary;
         petnames: Dictionary;
-        constructor() {
+
+        blacklistRejects: (stringToCheck: string) => boolean;
+
+        constructor(config: Config.Config.Config) {
             var helper:Helper.Helper.Helper = PasswordMeter.PasswordMeter.instance.getHelper();
-            this.blacklistDict = helper.compressedFileToDict("dictionary-blacklist1c8-compressed.txt");
-            this.namesDict = helper.compressedFileToDict("dictionary-names-compressed.txt");
+            // if (config.blacklist.checkSubstrings) {
+            //     this.blacklistBloom = helper.compressedFileToBloomFilter(config.blacklist.blacklistFile,
+            //         config.blacklist.checkSubstringLength);
+            //     this.blacklistDict = null;
+            //     this.blacklistRejects = function(stringToCheck) {
+            //         return this.blacklistBloom.substringExists(stringToCheck,
+            //             config.blacklist.checkSubstringLength);
+            //     };
+
+            // } else {
+            //     this.blacklistBloom = null;
+            //     this.blacklistDict = helper.compressedFileToDict(config.blacklist.blacklistFile);
+            //     this.blacklistRejects = function(stringToCheck) {
+            //         return this.blacklistDict[stringToCheck];
+            //     };
+            // }
+
+
+            if (!config.blacklist.checkSubstrings) {
+                this.blacklistRejects = function(stringToCheck) {
+                    return this.blacklistDict[stringToCheck];
+                }
+            } else {
+                this.blacklistRejects = function(stringToCheck) {
+                    return this.blacklistBloom.substringExists(stringToCheck, config.blacklist.checkSubstringLength);
+                }
+            }
+
+            this.blacklistDict = helper.compressedFileToDict(config.blacklist.blacklistFile);
+            this.blacklistBloom = helper.compressedFileToBloomFilter(config.blacklist.blacklistFile, config.blacklist.checkSubstringLength);
             this.passwordsDict = helper.compressedFileToDict("dictionary-passwords-compressed.txt");
+            this.namesDict = helper.compressedFileToDict("dictionary-names-compressed.txt");
             this.phrasesDict = helper.compressedFileToDict("dictionary-phrases-compressed.txt");
             this.englishwordsDict = helper.compressedFileToDict("dictionary-englishwords-compressed.txt");
             this.wikipediaDict = helper.compressedFileToDict("dictionary-wikipedia-compressed.txt");
@@ -32,7 +69,9 @@ export module Dictionaries {
     }
 
     (function () {
-        PasswordMeter.PasswordMeter.instance.setDictionaries(new Dictionaries());
+        var registry = PasswordMeter.PasswordMeter.instance;
+        var config = registry.getConfig();
+        PasswordMeter.PasswordMeter.instance.setDictionaries(new Dictionaries(config));
     }())
 }
 
