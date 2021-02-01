@@ -1,6 +1,7 @@
 import PasswordMeter = require("./PasswordMeter");
 import Helper = require("./helper");
 import Bloom = require("bloom-filters");
+import PasswordLeaks = require("./hibp");
 import Config = require("./config");
 
 export module Dictionaries {
@@ -10,35 +11,18 @@ export module Dictionaries {
     export class Dictionaries {
         namesDict: Dictionary;
         phrasesDict: Dictionary;
-        passwordsDict: Dictionary; // josh: keep around, used in rulefunction.ts > commonPwCheck
-        // load dictionary-passwords-compressed.txt into it
+        passwordsDict: Dictionary; // josh: keep around, used in rulefunction.ts commonPwCheck
         englishwordsDict: Dictionary;
         blacklistDict: Dictionary; // josh: use this for blacklist rule, not passwordsDict
         blacklistBloom: BloomFilter;
         wikipediaDict: Dictionary;
         petnames: Dictionary;
+        leaks: PasswordLeaks.PasswordLeaks;
 
         blacklistRejects: (stringToCheck: string) => boolean;
 
         constructor(config: Config.Config.Config) {
             var helper:Helper.Helper.Helper = PasswordMeter.PasswordMeter.instance.getHelper();
-            // if (config.blacklist.checkSubstrings) {
-            //     this.blacklistBloom = helper.compressedFileToBloomFilter(config.blacklist.blacklistFile,
-            //         config.blacklist.checkSubstringLength);
-            //     this.blacklistDict = null;
-            //     this.blacklistRejects = function(stringToCheck) {
-            //         return this.blacklistBloom.substringExists(stringToCheck,
-            //             config.blacklist.checkSubstringLength);
-            //     };
-
-            // } else {
-            //     this.blacklistBloom = null;
-            //     this.blacklistDict = helper.compressedFileToDict(config.blacklist.blacklistFile);
-            //     this.blacklistRejects = function(stringToCheck) {
-            //         return this.blacklistDict[stringToCheck];
-            //     };
-            // }
-
 
             if (!config.blacklist.checkSubstrings) {
                 this.blacklistRejects = function(stringToCheck) {
@@ -52,6 +36,7 @@ export module Dictionaries {
 
             this.blacklistDict = helper.compressedFileToDict(config.blacklist.blacklistFile);
             this.blacklistBloom = helper.compressedFileToBloomFilter(config.blacklist.blacklistFile, config.blacklist.checkSubstringLength);
+            this.leaks = new PasswordLeaks.PasswordLeaks();
             this.passwordsDict = helper.compressedFileToDict("dictionary-passwords-compressed.txt");
             this.namesDict = helper.compressedFileToDict("dictionary-names-compressed.txt");
             this.phrasesDict = helper.compressedFileToDict("dictionary-phrases-compressed.txt");
@@ -65,6 +50,10 @@ export module Dictionaries {
             for (var i = 0; i < temppetnames.length; i++) {
                 this.petnames[temppetnames[i]] = true;
             }
+        }
+
+        previouslyLeaked(pwd: string): boolean {
+            return this.leaks.previouslyLeaked(pwd);
         }
     }
 

@@ -465,6 +465,37 @@ export module RuleFunctions {
             compliance["sameChars"] = compliant;
         }
 
+        // dimension 11: prohibit previously-known leaked passwords
+        if (config.prohibitKnownLeaked.active) {
+            // explain
+            var thisExplanation = "Not use a password found in previous security leaks";
+
+            // check
+            var compliant = false;
+            // prohibit perviously-known leaked passwords
+            if (config.prohibitKnownLeaked.active) {
+
+                var compliant = false;
+                var thisExplanation = "";
+
+                if (pw.length < config.prohibitKnownLeaked.smallestLength || !dictionaries.previouslyLeaked(pw)) {
+                    compliant = true;
+                } else {
+                    compliant = false;
+                }
+                // report
+                if (compliant) {
+                } else {
+                    thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
+                }
+
+                if (!compliant) {
+                    explanation["usernameDifference"] = thisExplanation;
+                }
+                compliance["prohibitKnownLeaked"] = compliant;
+            }
+        }
+
         // potentialTODO reduce operation
         var overallCompliance: boolean = true;
         for (const item in compliance) {

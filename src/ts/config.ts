@@ -1,4 +1,4 @@
-// test 10 dimensions of composition requirements as follows:
+// test 11 dimensions of composition requirements as follows:
 //   dimension 1: length (min / max)
 //   dimension 2: mandatory # of character classes
 //   dimension 3: mandatory character classes
@@ -9,6 +9,7 @@
 //   dimension 8: password - username comparison
 //   dimension 9: NN complexity
 //   dimension 10: repeated nonconsecutive characters
+//   dimension 11: previously leaked passwords
 
 import PasswordMeter = require("./PasswordMeter");
 
@@ -58,6 +59,11 @@ interface ConfigLimit {
     limit: number;
 }
 
+interface ConfigSmallestLength {
+    active: boolean;
+    smallestLength: number;
+}
+
 interface ConfigLimitLengthException {
     active: boolean;
     limit: number;
@@ -105,7 +111,7 @@ export interface Config {
     sameChars: ConfigLimitLengthException;
     usernameDifference: ConfigLimit;
     minLogNnGuessNum: ConfigThreshold;
-    prohibitKnownLeaked: boolean;
+    prohibitKnownLeaked: ConfigSmallestLength;
     blacklist: ConfigBlacklist;
     neuralNetworkConfig: ConfigNeuralNetwork;
 }
@@ -183,7 +189,10 @@ export var passwordMeterDefaultConfig: Config = {
         threshold: 7, // prohibit passwords with a NN guess number less than 10^7
         rejectionFeedback: "Not be similar to extremely common passwords",
     },
-    prohibitKnownLeaked: false,
+    prohibitKnownLeaked: {
+        active: true,
+        smallestLength: 5,
+    },
         blacklist: {
             active: false,
             blacklistFile: "blacklist-cmu-compressed.txt",
