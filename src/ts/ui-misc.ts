@@ -218,13 +218,13 @@ export module UIMisc {
 			}
 		}
 
-		// translate NN guess number to a percentage-based score (based on stringency configuration).
+		// translate NN/heuristic guess number to a percentage-based score (based on stringency configuration).
 		// this will influence meter fill.
-		nnNumtoScoreAsPercent(nnNum: number): number {
-			if (nnNum > 0) {
-				return nnNum * Constants.Constants.METER_STRINGENCY_SCALE_FACTOR;
+		scaleGuessNumByMeterStringencyFactor(guessNum: number): number {
+			if (guessNum > 0) {
+				return guessNum * Constants.Constants.METER_STRINGENCY_SCALE_FACTOR;
 			} else {
-				return nnNum;
+				return guessNum;
 			}
 		}
 
@@ -398,7 +398,7 @@ export module UIMisc {
 				overallScore = this.heuristicMapping[fixedpw];
 			}
 			var nnNum = nni.getNeuralNetNum(fixedpw);
-			var nnScoreAsPercent = this.nnNumtoScoreAsPercent(nnNum);
+			var nnScoreAsPercent = this.scaleGuessNumByMeterStringencyFactor(nnNum);
 
 			if (typeof (nnNum) !== "undefined"
 				&& nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
@@ -426,7 +426,7 @@ export module UIMisc {
 							originalOverallScore = this.heuristicMapping[j];
 						}
 						var nnNumFix = nni.getNeuralNetNum(j);
-						var nnScoreAsPercentFix = this.nnNumtoScoreAsPercent(nnNumFix);
+						var nnScoreAsPercentFix = this.scaleGuessNumByMeterStringencyFactor(nnNumFix);
 						if (typeof (nnNumFix) !== "undefined"
 							&& nnScoreAsPercentFix >= 0
 							&& isFinite(nnScoreAsPercentFix)) {
@@ -497,8 +497,6 @@ export module UIMisc {
 		//	the bar when done calculating
 		//  *false indicates we are rating a candidate concrete suggestion
 		queryHeuristicGuessNumber(pw: string, username: string, primaryPassword: boolean): void {
-			// Used to make 10^{15} fill 2/3rds of the bar
-			var scalingFactor = 67 / 15;
 			// We overwrite the password if they use contextual or blacklisted content
 			// and we need the original to make the correct mappings
 			var originalPW = pw;
@@ -557,7 +555,7 @@ export module UIMisc {
 			for (var i = 1; i < coefficients.length; i++) {
 				overallScore += coefficients[i] * subscores[i];
 			}
-			overallScore = overallScore * scalingFactor;
+			overallScore = this.scaleGuessNumByMeterStringencyFactor(overallScore);
 			if (overallScore < (pw.length / 2)) {
 				overallScore = pw.length / 2;
 			} else if (overallScore > 100) {
@@ -734,7 +732,7 @@ export module UIMisc {
 					numberOfScores++;
 				}
 				var nnNum = nni.getNeuralNetNum(pw);
-				var nnScoreAsPercent = this.nnNumtoScoreAsPercent(nnNum);
+				var nnScoreAsPercent = this.scaleGuessNumByMeterStringencyFactor(nnNum);
 				if (typeof (nnNum) !== "undefined"
 					&& nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
 					numberOfScores++;
