@@ -153,5 +153,5 @@ The list of functions that provide feedback, in descending order of priority, is
 
 ## Initial Project Contributors
 
-Felicia Alfieri, Maung Aung, Lujo Bauer, Nicolas Christin, Jessica Colnago, Lorrie Faith Cranor, Henry Dixon, Pardis Emami Naeini, Hana Habib, Noah Johnson, William Melicher, Michael Stroucken, and Blase Ur* at Carnegie Mellon University and (*)the University of Chicago, United States.
+Felicia Alfieri, Maung Aung, Lujo Bauer, Nicolas Christin, Jessica Colnago, Lorrie Faith Cranor, Henry Dixon, Pardis Emami Naeini, Hana Habib, Noah Johnson, William Melicher, Michael Stroucken, Josh Tan and Blase Ur* at Carnegie Mellon University and (*)the University of Chicago, United States.
 
