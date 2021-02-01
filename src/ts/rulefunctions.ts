@@ -267,7 +267,7 @@ export module RuleFunctions {
             compliance["classAllow"] = compliant;
         }
 
-        //   dimension 5: forbidden passwords
+        //   dimension 5: blacklist / forbidden passwords
         if (config.blacklist.active) {
             var thisExplanation = "";
             var compliant = false;
