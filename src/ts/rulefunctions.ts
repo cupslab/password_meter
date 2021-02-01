@@ -267,45 +267,45 @@ export module RuleFunctions {
             compliance["classAllow"] = compliant;
         }
 
-                        //   dimension 5: forbidden passwords
-                        if (config.blacklist.active) {
-                            var thisExplanation = "";
-                            var compliant = false;
+        //   dimension 5: forbidden passwords
+        if (config.blacklist.active) {
+            var thisExplanation = "";
+            var compliant = false;
 
-                            // explain
-                            thisExplanation = "Not be an extremely common password";
+            // explain
+            thisExplanation = "Not be an extremely common password";
 
-                            // XXXstroucki is this used?
-                            var isBlacklisted = false;
+            // XXXstroucki is this used?
+            var isBlacklisted = false;
 
-                            // check
-                            if (pw.length > 0) {
+            // check
+            if (pw.length > 0) {
 
-                                var stringToCheck = pw; // default is case-sensitive fullstring
-                                if (config.blacklist.stripDigitsSymbolsFromPassword) {
-                                    stringToCheck = stringToCheck.replace(/[^a-zA-Z]/gi, '');
-                                }
-                                if (!config.blacklist.caseSensitive) {
-                                    stringToCheck = stringToCheck.toLowerCase();
-                                }
-                            }
-                            compliant = !isBlacklisted ||
-                            pw.length === 0 ||
-                                (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
+                var stringToCheck = pw; // default is case-sensitive fullstring
+                if (config.blacklist.stripDigitsSymbolsFromPassword) {
+                    stringToCheck = stringToCheck.replace(/[^a-zA-Z]/gi, '');
+                }
+                if (!config.blacklist.caseSensitive) {
+                    stringToCheck = stringToCheck.toLowerCase();
+                }
+            }
+            compliant = !isBlacklisted ||
+                pw.length === 0 ||
+                (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
 
-                            // report
-                            // note that we are only complaining about disallowed passwords if they use one
-                            if (compliant) {
-                            } else {
-                                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
+            // report
+            // note that we are only complaining about disallowed passwords if they use one
+            if (compliant) {
+            } else {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
 
-                            }
+            }
 
-                            if (!compliant) {
-                                explanation["blacklist"] = thisExplanation;
-                            }
-                            compliance["blacklist"] = compliant;
-                        }
+            if (!compliant) {
+                explanation["blacklist"] = thisExplanation;
+            }
+            compliance["blacklist"] = compliant;
+        }
 
         //   dimension 6: forbidden/permitted characters
         if (config.forbidChars.active) {
@@ -433,7 +433,7 @@ export module RuleFunctions {
             } else {
                 log.debug("too low NN guess number: " + pw + " (" + conservativeNnNum +
                     " < " + minLogNnGuessNum + ") [unconservative NN guess number: " + unconservativeNnNum + "]");
-                    thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
             }
 
             if (!compliant) {
@@ -483,6 +483,7 @@ export module RuleFunctions {
                 } else {
                     compliant = false;
                 }
+
                 // report
                 if (compliant) {
                 } else {
@@ -1315,7 +1316,7 @@ export module RuleFunctions {
                 pluralSuffix = "s";
             }
             var sensitiveText = "Have more variety than repeating the same " + uniques.length +
-                " character" + pluralSuffix + " ("+Helper.Helper.boldAll(uniques.sort()).toHumanString()+")";
+                " character" + pluralSuffix + " (" + Helper.Helper.boldAll(uniques.sort()).toHumanString() + ")";
             reasonWhy = "Passwords that use only a few different characters are easy for " +
                 "attackers to guess";
         }
@@ -1709,7 +1710,7 @@ export module RuleFunctions {
                             wordsTheyShouldNotHaveUsed[i].length);
                 }
             }
-            sensitiveText = "Don't use site-specific terms ("+Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString()+")";
+            sensitiveText = "Don't use site-specific terms (" + Helper.Helper.boldAll(wordsTheyShouldNotHaveUsed.removeDuplicates()).toHumanString() + ")";
             reasonWhy = "Attackers target their attacks to words used on a particular service";
         }
 
@@ -1975,45 +1976,45 @@ export module RuleFunctions {
         // identify dates YYYYMMDD without delimiters?
 
         // identify dates MM-DD-YYYY with delimiters
-        var rx = new RegExp(MM+DEL+DD+DEL+YYYY, "g");
+        var rx = new RegExp(MM + DEL + DD + DEL + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM-YYYY with delimiters
-        var rx = new RegExp(DD+DEL+MM+DEL+YYYY, "g");
+        var rx = new RegExp(DD + DEL + MM + DEL + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates MM-DD-YY with delimiters
-        var rx = new RegExp(MM+DEL+DD+DEL+YY, "g");
+        var rx = new RegExp(MM + DEL + DD + DEL + YY, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM-YY with delimiters
-        var rx = new RegExp(DD+DEL+MM+DEL+YY, "g");
+        var rx = new RegExp(DD + DEL + MM + DEL + YY, "g");
         dateanalyze(rx);
 
         // identify dates MMDDYYYY without delimiters
-        var rx = new RegExp(MM+DD+YYYY, "g");
+        var rx = new RegExp(MM + DD + YYYY, "g");
         dateanalyze(rx);
 
         // identify dates DDMMYYYY without delimiters
-        var rx = new RegExp(DD+MM+YYYY, "g");
+        var rx = new RegExp(DD + MM + YYYY, "g");
         dateanalyze(rx);
 
         // in the future, maybe consider identifying dates MMDDYY without any delimiters, but there seem to be lots of false positives
 
         // identify spelled-out months and recent year (4 digits)
-        var rx = new RegExp(MMMM+YYYY, "ig");
+        var rx = new RegExp(MMMM + YYYY, "ig");
         dateanalyze(rx);
 
         // identify spelled-out months and recent year (2 digits)
-        var rx = new RegExp(MMMM+YY, "ig");
+        var rx = new RegExp(MMMM + YY, "ig");
         dateanalyze(rx);
 
         // identify dates MM-DD with delimiters/
-        var rx = new RegExp(MM+DEL+DD, "g");
+        var rx = new RegExp(MM + DEL + DD, "g");
         dateanalyze(rx);
 
         // identify dates DD-MM with delimiters/
-        var rx = new RegExp(DD+DEL+MM, "g");
+        var rx = new RegExp(DD + DEL + MM, "g");
         dateanalyze(rx);
 
         // identify recent years between 1900 and 2049
@@ -2112,7 +2113,7 @@ export module RuleFunctions {
                     longestSeqStart = currentSeqStart;
                     longestSeqEnd = currentSeqEnd;
                 }
-
+ 
                 var score = longestSeqEnd - longestSeqStart + 1;
                 */
             var score = longestmatchlength;
