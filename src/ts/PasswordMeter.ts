@@ -10,8 +10,7 @@
 import JQuery = require("jquery");
 import LZString = require("lz-string");
 import LogLevel = require("loglevel");
-//potentialTODO bootstrap has infected jquery already
-//import Bootstrap = require("bootstrap");
+//bootstrap has infected jquery already
 import Helper = require("./helper");
 import Config = require("./config");
 import Dictionaries = require("./dict-misc");

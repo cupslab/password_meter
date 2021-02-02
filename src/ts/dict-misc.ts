@@ -11,9 +11,9 @@ export module Dictionaries {
     export class Dictionaries {
         namesDict: Dictionary;
         phrasesDict: Dictionary;
-        passwordsDict: Dictionary; // josh: keep around, used in rulefunction.ts commonPwCheck
+        passwordsDict: Dictionary; // used in rulefunction.ts commonPwCheck
         englishwordsDict: Dictionary;
-        blacklistDict: Dictionary; // josh: use this for blacklist rule, not passwordsDict
+        blacklistDict: Dictionary;
         blacklistBloom: BloomFilter;
         wikipediaDict: Dictionary;
         petnames: Dictionary;

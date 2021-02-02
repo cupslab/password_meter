@@ -20,13 +20,15 @@ We expect that most people who take advantage of the example files will nonethel
 
 1) "ignoredWords" should be updated to contain a list of site-specific words that should count for nothing in the password. We currently provide a small set of examples specific to CMU.
 
-2) A number of variables (length, classCount, classRequire, classAllow, forbidPasswords, forbidChars, repeatChars, and usernameDifference) define the site's mandated password-composition policy. In the example file, it is set to require only that passwords contain 8 or more characters and are not one of 25 extremely common passwords. The other dimensions are currently set to inactive, but can be enabled by simply editing these variables.
-
-3) An additional variable (forbiddenPasswords) specifies whether or not to forbid passwords on a larger blacklist of ~100,000 common passwords taken from Mark Burnett's Xato.net corpus. In our example, it is currently set to active. For our research supporting this decision, please see: http://www.blaseur.com/papers/usec2017-blacklists.pdf
+2) A number of variables (length, classCount, classRequire, classAllow, blackli
+st, forbidChars, repeatChars, and usernameDifference) define the site's mandated
+ password-composition policy. In the example file, it is set to require only tha
+t passwords contain 8 or more characters. The other dimensions are currently set
+ to inactive, but can be enabled by simply editing these variables.
 
 Beyond these configuration decisions, we expect that people who deploy our meter will edit the layout in /example/index.html and /example/config.css 
 
-Note that running the meter's code locally (e.g., from your computer's local hard disk) with browsers' default settings will not load the dictionary files (dictionary-*), and as a result no feedback will be given based on the use of dictionary words or common passwords, nor will the blacklist be active. In contrast, if loaded from a web server (e.g., Apache), these files will be loaded correctly.
+Note that running the meter's code locally (e.g., from your computer's local hard disk) with browsers' default settings will not load the dictionary files (dictionary-*), and as a result no feedback will be given based on the use of dictionary words or common passwords. In contrast, if loaded from a web server (e.g., Apache), these files will be loaded correctly.
 
 Note also that the meter expects all files to be in the same directory as each other.
 
@@ -77,7 +79,7 @@ We label each file with its intended purpose within the meter: main file; neural
 
   * **config.css** (Visual layout) The primary configuration settings for the meter's visual design are located in this file. These settings include colors, fonts, sizes, and border radii.
 
-  * **dictionary-blacklist1c8-compressed.txt** (Dictionary) An LZW compressed version of the 96,480 passwords containing at least 8 characters that appear in the Xato.net corpus of passwords at least four times. These form our optional blacklist of common 1class8 passwords. 
+  * **dictionary-blacklist1c8-compressed.txt** (Dictionary) An LZW compressed version of the 96,480 passwords containing at least 8 characters that appear in the Xato.net corpus of passwords at least four times.
 
   * **dictionary-englishwords-compressed.txt** (Dictionary) An LZW compressed version of 80,031 frequently used English words taken from the intersection of the BYU Corpus of Contemporary American English (COCA) and the UNIX dictionary.
 

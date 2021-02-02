@@ -98,6 +98,7 @@ export module Helper {
 			return dict;
 		}
 
+		// function for loading compressed dictionaries into a bloom filter that supports substring lookup
 		compressedFileToBloomFilter(path: string, blacklistSubstringLength: number): BloomFilter.BloomFilter {
 			// "The 1% false-positive rate can be reduced by a factor of ten
 			// by adding only about 4.8 bits per element."

@@ -32,7 +32,7 @@ export module RuleFunctions {
         var compliance: { [key: string]: boolean } = {};
 
         if (config.length.active) {
-            //   dimension 1: length (min / max)
+            // requirement: length (min / max)
             var minLength = config.length.minLength;
             var maxLength = config.length.maxLength;
             var compliant = false;
@@ -62,7 +62,7 @@ export module RuleFunctions {
             compliance["length"] = compliant;
         }
 
-        //   prep for dimensions 2-4
+        // prep for character-class requirements
         var hasLowercase = false;
         var hasUppercase = false;
         var hasDigits = false;
@@ -87,7 +87,7 @@ export module RuleFunctions {
             hasSymbols = true;
         }
 
-        //   dimension 2: mandatory # of character classes
+        // requirement: mandatory # of character classes
         if (config.classCount.active) {
             var minCharacterClasses = config.classCount.minCount;
             var maxCharacterClasses = config.classCount.maxCount;
@@ -100,7 +100,13 @@ export module RuleFunctions {
             } else {
                 thisExplanation = "Use " + minCharacterClasses.toString() + "-" + maxCharacterClasses.toString() + " of the following: ";
             }
-            thisExplanation += "uppercase letters; lowercase letters; digits; symbols";
+
+            if (config.randomizeOrderCharClassRequirement) {
+                var ui = PasswordMeter.PasswordMeter.instance.getUI();
+                thisExplanation += ui.getCharClassStringForCharClassCountReq();
+            } else {
+                thisExplanation += "uppercase letters; lowercase letters; digits; symbols";
+            }
 
             // check
             if (numClasses >= minCharacterClasses && numClasses <= maxCharacterClasses) {
@@ -119,7 +125,7 @@ export module RuleFunctions {
             compliance["classCount"] = compliant;
         }
 
-        //   dimension 3: mandatory character classes
+        // requirement: mandatory character classes
         if (config.classRequire.active) {
             var uppercaseLettersRequired = config.classRequire.upperCase;
             var lowercaseLettersRequired = config.classRequire.lowerCase;
@@ -130,32 +136,37 @@ export module RuleFunctions {
             var compliant = false;
 
             // explain
-            if (lowercaseLettersRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a lowercase letter";
-                } else {
-                    thisExplanation = "Contain a lowercase letter";
+            if (config.randomizeOrderCharClassRequirement) {
+                var ui = PasswordMeter.PasswordMeter.instance.getUI();
+                thisExplanation += ui.getCharClassStringForMandatoryCharClassReq();
+            } else {
+                if (lowercaseLettersRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a lowercase letter";
+                    } else {
+                        thisExplanation = "Contain a lowercase letter";
+                    }
                 }
-            }
-            if (uppercaseLettersRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and an uppercase letter";
-                } else {
-                    thisExplanation = "Contain an uppercase letter";
+                if (uppercaseLettersRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and an uppercase letter";
+                    } else {
+                        thisExplanation = "Contain an uppercase letter";
+                    }
                 }
-            }
-            if (digitsRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a digit";
-                } else {
-                    thisExplanation = "Contain a digit";
+                if (digitsRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a digit";
+                    } else {
+                        thisExplanation = "Contain a digit";
+                    }
                 }
-            }
-            if (symbolsRequired) {
-                if (thisExplanation.length > 0) {
-                    thisExplanation += " and a symbol";
-                } else {
-                    thisExplanation = "Contain a symbol";
+                if (symbolsRequired) {
+                    if (thisExplanation.length > 0) {
+                        thisExplanation += " and a symbol";
+                    } else {
+                        thisExplanation = "Contain a symbol";
+                    }
                 }
             }
 
@@ -183,7 +194,7 @@ export module RuleFunctions {
 
         }
 
-        //   dimension 4: forbidden character classes
+        // requirement: forbidden character classes
         if (config.classAllow.active) {
             var uppercaseLettersPermitted = config.classAllow.upperCase;
             var lowercaseLettersPermitted = config.classAllow.lowerCase;
@@ -267,7 +278,7 @@ export module RuleFunctions {
             compliance["classAllow"] = compliant;
         }
 
-        //   dimension 5: blacklist / forbidden passwords
+        // requirement: blacklist / forbidden passwords
         if (config.blacklist.active) {
             var thisExplanation = "";
             var compliant = false;
@@ -275,7 +286,6 @@ export module RuleFunctions {
             // explain
             thisExplanation = "Not be an extremely common password";
 
-            // XXXstroucki is this used?
             var isBlacklisted = false;
 
             // check
@@ -289,6 +299,7 @@ export module RuleFunctions {
                     stringToCheck = stringToCheck.toLowerCase();
                 }
             }
+            isBlacklisted = dictionaries.blacklistRejects(stringToCheck);
             compliant = !isBlacklisted ||
                 pw.length === 0 ||
                 (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
@@ -307,7 +318,7 @@ export module RuleFunctions {
             compliance["blacklist"] = compliant;
         }
 
-        //   dimension 6: forbidden/permitted characters
+        // requirement: forbidden/permitted characters
         if (config.forbidChars.active) {
             var forbiddenChars = config.forbidChars.list;
             var thisExplanation = "";
@@ -345,7 +356,7 @@ export module RuleFunctions {
             compliance["forbidChars"] = compliant;
         }
 
-        // dimension 7: repeated consecutive characters
+        // requirement: repeated consecutive characters
         if (config.repeatChars.active) {
             var repeatedCharsLimit = config.repeatChars.limit;
             var thisExplanation = "";
@@ -381,7 +392,7 @@ export module RuleFunctions {
             compliance["repeatChars"] = compliant;
         }
 
-        // dimension 8: password - username comparison
+        // requirement: password - username comparison
         if (config.usernameDifference.active) {
             var differenceFromUsername = config.usernameDifference.limit;
             var thisExplanation = "";
@@ -414,7 +425,7 @@ export module RuleFunctions {
             compliance["usernameDifference"] = compliant;
         }
 
-        // dimension 9: min NN guess number requirement
+        // requirement: min NN guess number requirement (by log10)
         if (config.minLogNnGuessNum.active) {
             var compliant = false;
             var thisExplanation = "";
@@ -425,7 +436,7 @@ export module RuleFunctions {
 
             // check
             if (conservativeNnNum < 0) {
-                log.debug("looking up NN guess number: " + pw);
+                log.debug("(still) looking up NN guess number: " + pw);
             } else if (conservativeNnNum > minLogNnGuessNum) {
                 compliant = true;
                 log.debug("high enough NN guess number: " + pw + " (" + conservativeNnNum +
@@ -443,7 +454,7 @@ export module RuleFunctions {
         }
 
 
-        // dimension 10: same character (repeated in password but not consecutively)
+        // requirement: same character (repeated in password, including non-consecutive repetition)
         if (config.sameChars.active) {
             var sameCharsLimit = config.sameChars.limit;
             var thisExplanation = "";
@@ -465,7 +476,7 @@ export module RuleFunctions {
             compliance["sameChars"] = compliant;
         }
 
-        // dimension 11: prohibit previously-known leaked passwords
+        // requirement: prohibit previously-known leaked passwords
         if (config.prohibitKnownLeaked.active) {
             // explain
             var thisExplanation = "Not use a password found in previous security leaks";
@@ -515,7 +526,8 @@ export module RuleFunctions {
         return ret;
     }
 
-    // find out whether a character occurs more than allowed
+    // helper function to determine if a password satisfies a max-char requirement
+    // for a given threshold
     function satisfiesMaxChar(pw: string, maxAllowed: number): boolean {
         var pwChars: { [key: string]: number } = {};
         for (var i = 0; i < pw.length; i++) {
@@ -587,7 +599,6 @@ export module RuleFunctions {
         var uppercaseCount = 0;
         var publicText = "";
         var sensitiveText = "";
-        //var problemText = "";
         var reasonWhy = "";
         var fixedPW = "";
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
@@ -602,9 +613,6 @@ export module RuleFunctions {
             publicText = "Consider using more uppercase letters";
             sensitiveText = "Consider using ";
             sensitiveText += (uppercaseCount + 1).toString() + " or more uppercase letters";
-            //if(uppercaseCount != 1) {
-            //	sensitiveText+="s";
-            //}
             reasonWhy = "Uppercase letters are surprisingly uncommon in passwords, which makes them hard to guess";
             var char1 = 65 + Math.floor(Math.random() * 26); // add an uppercase letter somewhere
             var loc1 = Math.floor(1 + Math.random() * (pw.length - 1)); // don't make it the first or last character since so many pws have that
@@ -631,7 +639,6 @@ export module RuleFunctions {
         var lowercaseCount = 0;
         var publicText = "";
         var sensitiveText = "";
-        //var problemText = "";
         var reasonWhy = "";
         var fixedPW = "";
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
@@ -648,9 +655,6 @@ export module RuleFunctions {
             publicText = "Consider using more lowercase letters";
             sensitiveText = "Consider using ";
             sensitiveText += (lowercaseCount + 1) + " or more lowercase letters";
-            //if(lowercaseCount != 1) {
-            //	sensitiveText+="s";
-            //}
             var char1 = 97 + Math.floor(Math.random() * 26); // add a lower letter somewhere
             var loc1 = Math.floor(1 + Math.random() * (pw.length - 1)); // don't make it the first or last character since so many pws have that
             fixedPW = pw.slice(0, loc1) + String.fromCharCode(char1) + pw.slice(loc1);
@@ -676,7 +680,6 @@ export module RuleFunctions {
         var digitCount = 0;
         var publicText = "";
         var sensitiveText = "";
-        var problemText = "";
         var reasonWhy = "";
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
         // potentialTODO active?
@@ -691,9 +694,6 @@ export module RuleFunctions {
             reasonWhy = "Most passwords contain no digits or digits in predictable places; doing otherwise makes your password harder to guess";
             sensitiveText = "Consider using ";
             sensitiveText += (digitCount + 1) + " or more digits";
-            //if(digitCount != 1) {
-            //	sensitiveText+="s";
-            //}
         }
 
         return {
@@ -716,7 +716,6 @@ export module RuleFunctions {
         var symbolCount = pw.replace(/[A-Za-z0-9]/g, "").length;;
         var publicText = "";
         var sensitiveText = "";
-        var problemText = "";
         var reasonWhy = "";
         var config = PasswordMeter.PasswordMeter.instance.getConfig();
         // potentialTODO active?
@@ -727,9 +726,6 @@ export module RuleFunctions {
             reasonWhy = "Few passwords contain symbols, which makes passwords with symbols harder to guess";
             sensitiveText = "Consider using ";
             sensitiveText += (symbolCount + 1) + " or more symbols";
-            //if(symbolCount != 1) {
-            //	sensitiveText+="s";
-            //}
         }
 
         return {
@@ -1259,8 +1255,6 @@ export module RuleFunctions {
             }
             */
         }
-        //			var keyvectorsjoined = "[" + keyvectors.join("][") + "]";
-        //			return keyvectorsjoined;
         var score = longestmatchlength + 1; // these are the inter-key jumps, so add 1 to get length of string
         var publicText = "";
         var sensitiveText = "";
@@ -1609,6 +1603,7 @@ export module RuleFunctions {
         }
     }
 
+    // note: this is unrelated to the blacklist requirement specified in config
     interface BlacklistComment {
         length: number;
         reasonWhy: string;
@@ -1752,7 +1747,6 @@ export module RuleFunctions {
         var nameArray = new Array<string>();
         var wikipediaArray = new Array<string>();
         var englishwordArray = new Array<string>();
-
 
         var registry = PasswordMeter.PasswordMeter.instance;
         var dictionaries = registry.getDictionaries();
@@ -2021,9 +2015,6 @@ export module RuleFunctions {
         var rx = new RegExp(YYYY, "g");
         dateanalyze(rx);
 
-        //console.log(datesUsed);
-        //console.log(passwordParts);
-
         if (score > 0) {
             publicText = "Avoid using dates";
             sensitiveText = "Avoid using dates like " + Helper.Helper.boldAll(datesUsed).toHumanString();
@@ -2162,7 +2153,6 @@ export module RuleFunctions {
         var publicText = "";
         var sensitiveText = "";
         var reasonWhy = "";
-        //var problemText = "";
         var score = 0;
         var pw = pw.replace(/[A-Z]/g, "U"); // replace uppercase letters with U (do this first since U is uppercase!)
         var pw = pw.replace(/[a-z]/g, "L"); // replace lowercase letters with L
@@ -2171,7 +2161,6 @@ export module RuleFunctions {
         var whereInArray = Constants.Constants.commonStructures.indexOf(pw);
         if (whereInArray >= 0) {
             score = numStructures - whereInArray;
-            //problemText = "";
             reasonWhy = "One technique attackers use is to try all possible passwords within common structures, or arrangements of character classes (e.g., where lowercase letters and digits are located)";
             publicText = "The way you structure your password is predictable";
             sensitiveText = publicText + " (";

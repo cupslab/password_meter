@@ -39,15 +39,19 @@ export module UIMisc {
 		// Mapping of passwords to a potential concrete suggestion. 
 		// If the suggestion is scored highly enough, then store it in fixedpwMapping.
 		private recommendedFixes: {[key: string]: string} = {};
+
 		// To avoid excess computation, keep track of how many tries we've made
 		// trying to generate a strong concerete suggestion. If too many, 
 		// give up rather than potentially cause UI lag.
 		private recommendedFixesTries: {[key: string]: number} = {};
+
 		// Keep track of the previous candidate we tried for the concrete suggestion.
 		// If insufficiently strong, we'll want to modify it
 		private previousCandidate: {[key: string]: string} = {};
+
 		// Final mapping of password to (pre-validated) stronger concrete suggestion
 		private fixedpwMapping: {[key: string]: string} = {};
+
 		// How the concrete suggestion was modified from the original (for highlights)
 		private deltaHighlighted: {[key: string]: Array<number>} = {};
 
@@ -56,10 +60,76 @@ export module UIMisc {
 		// We store this in a global to avoid double-calling the function each time.
 		private inCompliance: boolean = false;
 
+		// randomly-ordered list of the 4 character classes, for use in feedback
+		private randomlyOrderedCharClasses: Array<string> = [];
+
 		constructor() {
 			var registry = PasswordMeter.PasswordMeter.instance;
 			this.helper = registry.getHelper();
 			this.$ = registry.getJquery();
+
+            // shuffle character classes and store for use in requirements feedback
+            // note: we do it here rather than shuffle each time dynamically to avoid
+            // confusing user with constantly changing requirements
+            var charClasses = ["uppercase letter", "lowercase letter", "digit", "symbol"];
+            this.randomlyOrderedCharClasses = charClasses.shuffle();
+        }
+
+		// return randomly-ordered list of all 4 character classes
+        getCharClassStringForCharClassCountReq(): string {
+            var pluralalizedCharClasses = this.randomlyOrderedCharClasses.map(x => x + "s");
+            return pluralalizedCharClasses.join("; ");
+        }
+
+		// return string containing randomly-ordered required character classes
+        getCharClassStringForMandatoryCharClassReq(): string {
+            var registry = PasswordMeter.PasswordMeter.instance;
+            var config: Config.Config.Config = registry.getConfig();
+            var requirementString = "";
+            for (var i = 0; i < this.randomlyOrderedCharClasses.length; i++) {
+                var charClass = this.randomlyOrderedCharClasses[i];
+                switch (charClass) {
+                    case "uppercase letter":
+                        if (config.classRequire.upperCase) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and an uppercase letter";
+                            } else {
+                                requirementString = "Contain an uppercase letter";
+                            }
+                        }
+                        break;
+                    case "lowercase letter":
+                        if (config.classRequire.lowerCase) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and a lowercase letter";
+                            } else {
+                                requirementString = "Contain a lowercase letter";
+                            }
+                        }
+                        break;
+                    case "digit":
+                        if (config.classRequire.digits) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and a digit";
+                            } else {
+                                requirementString = "Contain a digit";
+                            }
+                        }
+                        break;
+                    case "symbol":
+                        if (config.classRequire.symbols) {
+                            if (requirementString.length > 0) {
+                                requirementString += " and a symbol";
+                            } else {
+                                requirementString = "Contain a symbol";
+                           }
+                        }
+                        break;
+                }
+            }
+
+            // mandatory classes should already be shuffled by construction
+            return requirementString;
 		}
 
 		onReady(): void {
@@ -218,7 +288,8 @@ export module UIMisc {
 			}
 		}
 
-		// translate NN/heuristic guess number to a percentage-based score (based on stringency configuration).
+		// translate NN/heuristic guess number to a percentage-based score (based on meter
+		// stringency configuration).
 		// this will influence meter fill.
 		scaleGuessNumByMeterStringencyFactor(guessNum: number): number {
 			if (guessNum > 0) {
@@ -280,6 +351,11 @@ export module UIMisc {
 		// It requires the current candidate (pw), the current recursion depth (depth) 
 		// to avoid causing lag, and the original version of the password (originalPW)
 		generateCandidateFixed(pw: string, depth: number, originalPW: string): number {
+			var config = PasswordMeter.PasswordMeter.instance.getConfig();
+            if (!config.provideConcretePasswordSuggestions) {
+                return 1;
+			}
+			
 			// We keep a vector that tracks changes we make to the password for 
 			// future highlighting purposes.
 			var deltas: Array<number> = [];
@@ -339,6 +415,10 @@ export module UIMisc {
 			// Check the modification's compliance with the password-composition policy
 			var currentUsername = this.$("#usernamebox").val() as string;
 
+			if (typeof (this.heuristicMapping[modifiedPW]) === "undefined") {
+				this.queryHeuristicGuessNumber(modifiedPW, currentUsername, false);
+			}
+			
 			var verified = RuleFunctions.RuleFunctions.verifyMinimumRequirements(modifiedPW, currentUsername);
 			if (verified.compliant) {
 				// If it complies with the policy
@@ -426,10 +506,11 @@ export module UIMisc {
 							originalOverallScore = this.heuristicMapping[j];
 						}
 						var nnNumFix = nni.getNeuralNetNum(j);
-						var nnScoreAsPercentFix = this.scaleGuessNumByMeterStringencyFactor(nnNumFix);
+						var nnScoreAsPercentFix = this.scaleGuessNumByMeterStringencyFactor(nnNumFix); // note: heuristicMapping already scaled in queryHeuristicGuessNumber
 						if (typeof (nnNumFix) !== "undefined"
 							&& nnScoreAsPercentFix >= 0
 							&& isFinite(nnScoreAsPercentFix)) {
+								// if neural less tha heuristic score, then overall score becomes neural score
 							if (originalOverallScore === 0
 								|| (originalOverallScore > 0
 									&& nnScoreAsPercentFix < originalOverallScore)) {
@@ -646,43 +727,36 @@ export module UIMisc {
 				publictips.push(lenObj.publicText);
 				sensitivetips.push(lenObj.sensitiveText);
 				reasonWhy.push(lenObj.reasonWhy);
-				//problemText.push(lenObj.problemText);
 			}
 			if (symbolObj.publicText.length > 0) {
 				publictips.push(symbolObj.publicText);
 				sensitivetips.push(symbolObj.sensitiveText);
 				reasonWhy.push(symbolObj.reasonWhy);
-				//problemText.push(symbolObj.problemText);
 			}
 			if (upperObj.publicText.length > 0) {
 				publictips.push(upperObj.publicText);
 				sensitivetips.push(upperObj.sensitiveText);
 				reasonWhy.push(upperObj.reasonWhy);
-				//problemText.push(upperObj.problemText);
 			}
 			if (digitObj.publicText.length > 0) {
 				publictips.push(digitObj.publicText);
 				sensitivetips.push(digitObj.sensitiveText);
 				reasonWhy.push(digitObj.reasonWhy);
-				//problemText.push(digitObj.problemText);
 			}
 			if (lowerObj.publicText.length > 0) {
 				publictips.push(lowerObj.publicText);
 				sensitivetips.push(lowerObj.sensitiveText);
 				reasonWhy.push(lowerObj.reasonWhy);
-				//problemText.push(lowerObj.problemText);
 			}
 			if (commonsubstringObj.publicText.length > 0 && !this.redundant(commonsubstringObj.problemText, problemText)) {
 				publictips.push(commonsubstringObj.publicText);
 				sensitivetips.push(commonsubstringObj.sensitiveText);
 				reasonWhy.push(commonsubstringObj.reasonWhy);
-				//problemText.push(commonsubstringObj.problemText);
 			}
 			if (structureObj.publicText.length > 0) {
 				publictips.push(structureObj.publicText);
 				sensitivetips.push(structureObj.sensitiveText);
 				reasonWhy.push(structureObj.reasonWhy);
-				//problemText.push(structureObj.problemText);
 			}
 
 			// Save the mapping of password to score
@@ -887,7 +961,8 @@ export module UIMisc {
 				}
 
 				// Recommend a concrete suggestion if we have one
-				if (typeof (this.fixedpwMapping[pw]) !== "undefined") {
+				if (config.provideConcretePasswordSuggestions &&
+					typeof (this.fixedpwMapping[pw]) !== "undefined") {
 					// Change colors to highlight what was modified
 					var coloredFixedPW = "";
 					var whereToColor = this.deltaHighlighted[this.fixedpwMapping[pw]];
@@ -954,7 +1029,7 @@ export module UIMisc {
 				this.$(".recommended").hide();
 
 				// Give text feedback about how they fail to comply with policy
-				var policyGripes = [];
+				var policyGripes: Array<string> = [];
 				var detail = minReqObj.detail;
 				for (var metric in detail.compliance) {
 					if (!detail.compliance[metric]) {
@@ -982,11 +1057,11 @@ export module UIMisc {
 					mRow.show();
 					suggestion.html(gripe);
 				}
-
 			}
 
 			// Start trying to generate a concrete suggestion
-			if ((pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2)
+			if (config.provideConcretePasswordSuggestions
+				&& (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2)
 				&& minReqObj.compliant && typeof (this.fixedpwMapping[pw]) === "undefined"
 				&& overallScore < 100) {
 				this.generateCandidateFixed(pw, 0, pw);

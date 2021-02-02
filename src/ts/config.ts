@@ -76,7 +76,7 @@ export module Config {
         rejectionFeedback: string;
     }
 
-    interface ConfigBlacklist { // josh: probably should export this since pass on to dependency
+    interface ConfigBlacklist {
         active: boolean;
         // if case-insensitive, blacklist file should contain all lowercase entries
         // if stripsDigitsSymbol, blacklist file should contain all letters
@@ -85,7 +85,7 @@ export module Config {
         stripDigitsSymbolsFromPassword: boolean;
         checkSubstrings: boolean;
         checkSubstringLength: number; // (minimum) substring length of blacklisted-item that password should be checked against
-        lengthException: number;
+        lengthException: number; // -1 if no length exception
     }
 
     export interface ConfigNeuralNetwork { // raise visibility because we pass it on to a dependency
@@ -96,16 +96,16 @@ export module Config {
     }
 
     export interface Config {
+        provideConcretePasswordSuggestions: boolean;
+        randomizeOrderCharClassRequirement: boolean;
         colors: ConfigColor;
         symbols: ConfigSymbols;
         remindAgainstReuse: boolean;
         ignoredWords: Array<string>; // list of words that should count for nothing in the password
-        //forbiddenPasswords: Array<string>; // list of passwords that should be rejected
         length: ConfigLength;
         classCount: ConfigClassCount;
         classRequire: ConfigClassBoolean;
         classAllow: ConfigClassBoolean;
-        //forbidPasswords: ConfigForbidPasswords;
         forbidChars: ConfigForbidChars;
         repeatChars: ConfigLimit;
         sameChars: ConfigLimitLengthException;
@@ -117,6 +117,8 @@ export module Config {
     }
 
     export var passwordMeterDefaultConfig: Config = {
+        provideConcretePasswordSuggestions: true,
+        randomizeOrderCharClassRequirement: true,
         colors: { // display colors
             compliant: "#006600", // by default show completed requirement in green
             noncompliant: "#660000", // by default show outstanding requirement in red
@@ -129,13 +131,6 @@ export module Config {
         ignoredWords: // list of words that should count for nothing in the password
             ["mechanical", "amazon", "mturk", "turk", "survey", "bonus", "qualtrics",
                 "study", "carnegie", "mellon", "university"],
-        /*
-        forbiddenPasswords: // list of passwords that should be rejected
-             ["123456", "password", "12345", "12345678", "qwerty", "1234567890", "1234",
-             "baseball", "dragon", "football", "1234567", "monkey", "letmein", "abc123",
-             "111111", "mustang", "access", "shadow", "master", "michael", "superman",
-             "696969", "123123", "batman", "trustno1"],
-        */
         length: {
             active: true,
             minLength: 8,
@@ -160,19 +155,12 @@ export module Config {
             digits: true,
             symbols: true,
         },
-        /*
-        forbidPasswords: {
-            active: true,
-            includeLargerList: true, // setting this to true also blacklists tens of thousands
-            // of common passwords loaded for the common passwords dictionary check
-        },
-        */
         forbidChars: {
             active: false,
             list: [],
         },
         repeatChars: {
-            active: true,
+            active: false,
             limit: 3, // prohibit a character being repeated N or more times consecutively
         },
         sameChars: { // multiple occurrences but nonconsecutive
@@ -181,7 +169,7 @@ export module Config {
             lengthException: 20, // constraint does not apply if password is longer than 20 chars
         },
         usernameDifference: {
-            active: true,
+            active: false,
             limit: 1, // prohibit passwords being N or fewer characters different than username
         },
         minLogNnGuessNum: {
@@ -190,7 +178,7 @@ export module Config {
             rejectionFeedback: "Not be similar to extremely common passwords",
         },
         prohibitKnownLeaked: {
-            active: true,
+            active: false,
             smallestLength: 5,
         },
         blacklist: {

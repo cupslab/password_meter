@@ -12,7 +12,6 @@ interface String {
 	reverse(): string;
 }
 
-
 String.prototype.replaceAt = function(index: number, str: string): string {
 	return this.substr(0, index) + str + this.substr(index + 1);
 }
@@ -36,8 +35,6 @@ String.prototype.listSubstringsNoFilter = function(minLength: number) {
 String.prototype.escapeHTML = function(): string {
 	return this.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-
-
 
 // Returns an array of all substrings after removing non-alphabetic characters 
 // and lowercasing the password. 

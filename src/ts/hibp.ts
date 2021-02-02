@@ -29,8 +29,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// https://github.com/mehdibo/hibp-js (with additional tweaks for meter and
-// conversion to Typescript by Josh Tan and Michael Stroucken)
+// based on https://github.com/mehdibo/hibp-js (with additional tweaks for
+// meter and conversion to Typescript by Josh Tan and Michael Stroucken)
 
 export class PasswordLeaks {
 
