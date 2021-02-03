@@ -306,6 +306,17 @@ export module UIMisc {
 			}
 		}
 
+		// unscale a heuristic/NN score (0-100), which produces a log10 guess number
+		// (for NN scores, the resulting NN guess num is conservative; the
+		// meter has divided the guess number by a scaling factor)
+		unscaleScoreIntoLogGuessNum(score: number): number {
+			if (score > 0) {
+				return score / Constants.Constants.METER_STRINGENCY_SCALE_FACTOR;
+			} else {
+				return score;
+			}
+		}
+
 		// The main function for starting the password-rating process.
 		// This function determines whether we've already calculated scores for 
 		// a given password using both heuristics and neural networks. 
@@ -1114,10 +1125,13 @@ export module UIMisc {
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var nnNumScore = this.scaleGuessNumByMeterStringencyFactor(nni.getNeuralNetNum(pw));
 			var heuristicScore = this.heuristicMapping[pw];
+			var conservativeNnLogGuessNum = nni.getNeuralNetNum(pw);
+			var heuristicLogGuessNum = this.unscaleScoreIntoLogGuessNum(this.heuristicMapping[pw])
 
 			// Display bar in main window
 			this.$("#cups-passwordmeter-span").css("width", Math.round(298 * score / 100).toString() + "px");
-			this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger("change", [score.toString(), heuristicScore, nnNumScore]);
+			this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger(
+				"change", [score.toString(), heuristicScore, nnNumScore, heuristicLogGuessNum, conservativeNnLogGuessNum]);
 
 			// display bar in modal
 			this.$("#cups-passwordmeter-span-modal").css("width", Math.round(298 * score / 100).toString() + "px");
