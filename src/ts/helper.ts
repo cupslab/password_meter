@@ -4,6 +4,7 @@ import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import LogLevel = require("loglevel");
 import BloomFilter = require("bloom-filters");
+import Config = require("./config");
 
 export module Helper {
 	interface MatchFoo {
@@ -56,15 +57,24 @@ export module Helper {
 			return a;
 		}
 
+		// XXXstroucki is this used?
 		// function for loading dictionaries that we use as wordlists
 		// REQUIRES: path is a valid path to a txt file
 		// REQUIRES: file is formatted such that there is one password per line
 		// ENSURES: creates a javascript object from the given file path
-		fileToDict(file: string): { [key: string]: boolean } {
+		fileToDict(path: string): { [key: string]: boolean } {
 			var dict: { [key: string]: boolean } = {};
 			var fBuildDict = this.buildDict;
 			var log = this.log;
-			this.$.get(file, function (s) {
+
+			var registry = PasswordMeter.PasswordMeter.instance;
+			var config = registry.getConfig();
+			var staticPrefix = config.staticUrlPrefix;
+			if (staticPrefix !== "") {
+				path = staticPrefix + path;
+			}
+
+			this.$.get(path, function (s) {
 				var words = s.split("\n"); // get as an array
 				var added = fBuildDict(words, dict);
 				log.debug("Loaded " + added + " words to dictionary.");
@@ -89,6 +99,14 @@ export module Helper {
 			var fLZString = this.LZString;
 			var fBuildDict = this.buildDict;
 			var log = this.log;
+
+			var registry = PasswordMeter.PasswordMeter.instance;
+			var config = registry.getConfig();
+			var staticPrefix = config.staticUrlPrefix;
+			if (staticPrefix !== "") {
+				path = staticPrefix + path;
+			}
+			
 			this.$.get(path, function (s) {
 				var decompressed = fLZString.decompressFromEncodedURIComponent(s);
 				var words: Array<string> = decompressed.split(",");

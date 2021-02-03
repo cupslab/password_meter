@@ -114,6 +114,7 @@ export module Config {
         prohibitKnownLeaked: ConfigSmallestLength;
         blacklist: ConfigBlacklist;
         neuralNetworkConfig: ConfigNeuralNetwork;
+        staticUrlPrefix: string,
     }
 
     export var passwordMeterDefaultConfig: Config = {
@@ -196,6 +197,7 @@ export module Config {
             zigzag: true,
             scaleFactor: 300,
         },
+        staticUrlPrefix: "",
 
     };
 
