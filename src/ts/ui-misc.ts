@@ -1132,7 +1132,7 @@ export module UIMisc {
 			// Display bar in main window
 			this.$("#cups-passwordmeter-span").css("width", Math.round(298 * score / 100).toString() + "px");
 			this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger(
-				"change", [score.toString(), heuristicScore, nnNumScore, heuristicLogGuessNum, conservativeNnLogGuessNum, compliance.toString()]);
+				"change", [score.toString(), heuristicScore, nnNumScore, heuristicLogGuessNum, conservativeNnLogGuessNum, compliance]);
 
 			// display bar in modal
 			this.$("#cups-passwordmeter-span-modal").css("width", Math.round(298 * score / 100).toString() + "px");
