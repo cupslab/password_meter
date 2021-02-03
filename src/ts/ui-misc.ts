@@ -284,7 +284,10 @@ export module UIMisc {
 			}
 			// If meets policy, matches confirm, and they hit submit, let them
 			if (triedToSubmit && compliantOverall) {
-				alert("this would be submitted");
+				//alert("this would be submitted");
+				// XXXstroucki what is this?
+				// @ts-ignore
+				continueSubmit();
 			}
 		}
 
@@ -848,7 +851,7 @@ export module UIMisc {
 			if (minReqObj.compliant) {
 				this.inCompliance = true;
 				if (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2) {
-					this.displayBar(overallScore, true);
+					this.displayBar(overallScore, true, pw);
 				}
 				this.$(".detailedFeedback").show();
 
@@ -908,7 +911,7 @@ export module UIMisc {
 				} else if (overallScore < 100) {
 					var feedbackHighMedium = "Your password is pretty good.";
 					if (config.remindAgainstReuse) {
-						feedbackHighMedium += " Use it only for this account. <span class='explainWhy explainWhyColoring' onclick=\"$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);\" data-target='#myModalGeneric' data-target='#myModal'>(Why?)</span>";
+						feedbackHighMedium += " Use it only for this account. <span class='reuseAdvice explainWhy explainWhyColoring' onclick=\"$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);\" data-target='#myModalGeneric' data-target='#myModal'>(Why?)</span>";
 					}
 					feedbackHighMedium += "<br><p style='line-height:0.25em;'>&nbsp;</p>To make it even better:";
 					this.$("#feedbackHeaderText").html(feedbackHighMedium);
@@ -916,7 +919,7 @@ export module UIMisc {
 				} else {
 					var feedbackStrong = "Your password appears strong.";
 					if (config.remindAgainstReuse) {
-						feedbackStrong += " Make sure you use it only for this account. <span class='explainWhy explainWhyColoring' onclick=\"$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);\" data-target='#myModalGeneric' data-target='#myModal'>(Why?)</span>";
+						feedbackStrong += " Make sure you use it only for this account. <span class='reuseAdvice explainWhy explainWhyColoring' onclick=\"$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);\" data-target='#myModalGeneric' data-target='#myModal'>(Why?)</span>";
 					}
 					this.$("#feedbackHeaderText").html(feedbackStrong);
 					this.$("#feedbackHeaderTextModal").html(feedbackStrong);
@@ -974,7 +977,7 @@ export module UIMisc {
 							coloredFixedPW += proposedPassword[j].escapeHTML();
 						}
 					}
-					this.$(".fixedPW").html(coloredFixedPW);
+					this.$(".fixedPW").html(coloredFixedPW).trigger("change");
 					// If we don't yet have a concrete suggestion
 				} else {
 					this.$(".recommended").hide();
@@ -1007,7 +1010,7 @@ export module UIMisc {
 				var nni = PasswordMeter.PasswordMeter.instance.getNN();
 
 				if (pw.length === 0 || !nni.heardFromNn() || numberOfScores === 2) {
-					this.displayBar(overallScore, false);
+					this.displayBar(overallScore, false, pw);
 				}
 				// Don't let them confirm a non-compliant password
 				this.$("#confirmpw").hide();
@@ -1020,7 +1023,7 @@ export module UIMisc {
 				var requirementsHeader = "";
 				var config: Config.Config.Config = PasswordMeter.PasswordMeter.instance.getConfig();
 				if (config.remindAgainstReuse) {
-					requirementsHeader = "<span style='color:#555555;'>Don't reuse a password from another account!</span> <span class='explainWhy explainWhyColoring' onclick=\"$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);\" data-target='#myModalGeneric' data-target='#myModal'>(Why?)</span><br><p style='line-height:0.25em;'>&nbsp;</p>";
+					requirementsHeader = "<span style='color:#555555;'>Don't reuse a password from another account!</span> <span class='reuseAdvice explainWhy explainWhyColoring' onclick=\"$('#myModalGeneric').modal('show');$('#okGeneric').prop('disabled', false);\" data-target='#myModalGeneric' data-target='#myModal'>(Why?)</span><br><p style='line-height:0.25em;'>&nbsp;</p>";
 				}
 				var nonCompliantAdmonition = "Your password <span style='text-decoration: underline;'>must</span>:";
 				this.$("#feedbackHeaderText").html(requirementsHeader + nonCompliantAdmonition);
@@ -1072,7 +1075,7 @@ export module UIMisc {
 		// (expected range 0-100) and a boolean metRequirements indicating yes (true)
 		// to display the bar in color or no (false) to display the bar in grayscale 
 		// until the requirements have been met.
-		displayBar(score: number, metRequirements: boolean): void {
+		displayBar(score: number, metRequirements: boolean, pw: string): void {
 			// Adjust score if outside the range
 			if (score < 0) {
 				score = 0;
@@ -1098,9 +1101,14 @@ export module UIMisc {
 					+ "," + Math.round(215 - (scoreProportion - 0.65) / 0.035) + ",0)";
 			}
 
+			// gather info needed for 'change' event
+            var nni = PasswordMeter.PasswordMeter.instance.getNN();
+            var nnNumScore = this.scaleGuessNumByMeterStringencyFactor(nni.getNeuralNetNum(pw));
+            var heuristicScore = this.heuristicMapping[pw];
+
 			// Display bar in main window
 			this.$("#cups-passwordmeter-span").css("width", Math.round(298 * score / 100).toString() + "px");
-			this.$("#cups-passwordmeter-span").css("background-color", barcolor);
+			this.$("#cups-passwordmeter-span").css("background-color", barcolor).trigger("change", [score.toString(), heuristicScore, nnNumScore]);
 
 			// display bar in modal
 			this.$("#cups-passwordmeter-span-modal").css("width", Math.round(298 * score / 100).toString() + "px");
