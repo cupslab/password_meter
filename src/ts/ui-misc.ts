@@ -6,6 +6,7 @@ import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import RuleFunctions = require("./rulefunctions");
 import Constants = require("./constants");
+import { NeuralNetwork } from "./nn-misc";
 
 export module UIMisc {
 	export class UIMisc {
@@ -817,13 +818,16 @@ export module UIMisc {
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var overallScore = 0;
 			var numberOfScores = 0;
+			var heuristicScore = this.heuristicMapping[pw];
 			if (pw.length > 0) {
-				if (typeof (this.heuristicMapping[pw]) !== "undefined"
-					&& this.heuristicMapping[pw] >= 0) {
-					overallScore = this.heuristicMapping[pw];
+				if (typeof (heuristicScore) !== "undefined"
+					&& heuristicScore >= 0) {
+					overallScore = heuristicScore;
 					numberOfScores++;
 				}
 				var nnNum = nni.getNeuralNetNum(pw);
+				var config = PasswordMeter.PasswordMeter.instance.getConfig();
+				var unscaledNnNum = nnNum + NeuralNetwork.log10(config.neuralNetworkConfig.scaleFactor);
 				var nnScoreAsPercent = this.scaleGuessNumByMeterStringencyFactor(nnNum);
 				if (typeof (nnNum) !== "undefined"
 					&& nnScoreAsPercent >= 0 && isFinite(nnScoreAsPercent)) {
@@ -838,7 +842,15 @@ export module UIMisc {
 				overallScore = pw.length / 2; // make people see at least some progess is happening
 			}
 
-			log.info(pw + " overall from heuristic (" + this.heuristicMapping[pw] + ") and neural nets (" + nnScoreAsPercent + ")");
+			var logstring = pw;
+			if (typeof (nnNum) !== "undefined" && nnNum != -1) {
+				logstring += " [NN #: " + nnNum.toFixed(2) + "]";
+			}
+			logstring += " (unscaled: " + unscaledNnNum.toFixed(2) + ")" +
+				", NN score: " + nnScoreAsPercent.toFixed(2) +
+				", heuristic score: " + heuristicScore.toFixed(2) +
+				", overall score: " + overallScore.toFixed(2) + ")";
+			log.info(logstring);
 
 			// Avoid errors in case the feedback mapping was somehow screwed up
 			if (typeof (this.feedbackMapping[pw]) === "undefined") {
@@ -859,8 +871,6 @@ export module UIMisc {
 			var config = PasswordMeter.PasswordMeter.instance.getConfig();
 
 			var currentUsername = this.$("#usernamebox").val() as string;
-			var nni = PasswordMeter.PasswordMeter.instance.getNN();
-
 			var minReqObj = RuleFunctions.RuleFunctions.verifyMinimumRequirements(pw, currentUsername);
 			// If password complies with password policy, show feedback
 			if (minReqObj.compliant) {

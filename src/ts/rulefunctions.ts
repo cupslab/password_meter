@@ -432,7 +432,6 @@ export module RuleFunctions {
             var minLogNnGuessNum = config.minLogNnGuessNum.threshold;
             var nni = PasswordMeter.PasswordMeter.instance.getNN();
             var conservativeNnNum = nni.getNeuralNetNum(pw);
-            var unconservativeNnNum = conservativeNnNum + NeuralNetwork.NeuralNetwork.log10(config.neuralNetworkConfig.scaleFactor);
 
             // check
             if (conservativeNnNum < 0) {
@@ -440,10 +439,10 @@ export module RuleFunctions {
             } else if (conservativeNnNum > minLogNnGuessNum) {
                 compliant = true;
                 log.debug("high enough NN guess number: " + pw + " (" + conservativeNnNum +
-                    " > " + minLogNnGuessNum + ") [unconservative NN guess number: " + unconservativeNnNum + "]");
+                    " > " + minLogNnGuessNum + ")");
             } else {
                 log.debug("too low NN guess number: " + pw + " (" + conservativeNnNum +
-                    " < " + minLogNnGuessNum + ") [unconservative NN guess number: " + unconservativeNnNum + "]");
+                    " < " + minLogNnGuessNum + ")");
                 thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
             }
 
