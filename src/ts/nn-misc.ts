@@ -5,6 +5,12 @@ import Config = require("./config");
 declare class NeuralNetworkClient {
 	constructor(cb: (n: number, s: string) => void, config: Config.Config.ConfigNeuralNetwork);
 	query_guess_number(pw: string): void;
+	// XXXstroucki ???
+	raw_predict_next(s: string): void;
+	predict_next(s: string): void;
+	debug_password_prob(s: string): void;
+	debug_password_guess_num(s: string): void;
+	debug_next_char(s: string, verbose: boolean): void;
 }
 
 export module NeuralNetwork {
@@ -12,7 +18,6 @@ export module NeuralNetwork {
 	var neverHeardFromNN = true;
 
 	// mapping of passwords to score based on neural networks
-	// TODO(josh): use Least Recently Used cache so mapping doesn't grow too large
 	var neuralNetMapping: { [key: string]: number } = {};
 
 	// Helper function designed to post-process neural network guess numbers
@@ -54,7 +59,7 @@ export module NeuralNetwork {
 	// 2. as long as password is not empty string (""), if NN is +infinity, then map to 100 percent
 	//    (due to NN bug, empty string maps to positive +infinity also; don't map to 100 for that case)
 	// 3. if NN is not a number
-    function postProcessNnNumAndCache(result: number, password: string): void {
+	function postProcessNnNumAndCache(result: number, password: string): void {
 
 		// Make 10^15 guesses fill 2/3rds of meter
 		const scaleToMeter = 67 / 15;
@@ -135,6 +140,12 @@ export module NeuralNetwork {
 				this.nn.query_guess_number(pw);
 			}
 		}
+
+		// XXXstroucki ???
+		public debugNN(pw: string, verbose: boolean) {
+			this.nn.debug_password_prob(pw);
+			this.nn.debug_next_char(pw, verbose);
+		}
 	}
 
 	(function () {
@@ -148,6 +159,8 @@ export module NeuralNetwork {
 		var instance = new NeuralNetworkInterface(nn, nnFixed);
 
 		registry.setNN(instance);
+		// initial NN debug message
+		instance.debugNN("", false);
 	}())
 
 }

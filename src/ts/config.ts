@@ -92,7 +92,7 @@ export module Config {
         intermediate: string;
         file: string;
         zigzag: boolean;
-        scaleFactor: number;
+        guessNumScaleFactor: number;
     }
 
     export interface Config {
@@ -195,7 +195,7 @@ export module Config {
             intermediate: "basic_3M.info_and_guess_numbers.no_bloomfilter.json",
             file: "basic_3M.weight_arch.quantized.fixed_point1000.zigzag.nospace.json",
             zigzag: true,
-            scaleFactor: 300,
+            guessNumScaleFactor: 300,
         },
         staticUrlPrefix: "",
 
