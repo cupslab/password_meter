@@ -8,6 +8,7 @@ declare class NeuralNetworkClient {
 	// XXXstroucki ???
 	raw_predict_next(s: string): void;
 	predict_next(s: string): void;
+	debug_prefix_prob(s: string): void;
 	debug_password_prob(s: string): void;
 	debug_password_guess_num(s: string): void;
 	debug_next_char(s: string, verbose: boolean): void;
@@ -143,6 +144,7 @@ export module NeuralNetwork {
 
 		// XXXstroucki ???
 		public debugNN(pw: string, verbose: boolean) {
+			this.nn.debug_prefix_prob(pw);
 			this.nn.debug_password_prob(pw);
 			this.nn.debug_next_char(pw, verbose);
 		}
@@ -160,6 +162,8 @@ export module NeuralNetwork {
 
 		registry.setNN(instance);
 		// initial NN debug message
+		// XXXstroucki something else
+		console.log("To view all next char probabilities, use: PasswordMeter.debugNN()");
 		instance.debugNN("", false);
 	}())
 
