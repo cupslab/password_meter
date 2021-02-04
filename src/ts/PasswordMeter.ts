@@ -1,4 +1,4 @@
-// Copyright 2017 by Carnegie Mellon University
+// Copyright 2017-2021 by Carnegie Mellon University
 // globals on entry:
 // $ for JQuery (infected with Bootstrap)
 // LZString for LZString
