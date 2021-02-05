@@ -324,7 +324,6 @@ export module RuleFunctions {
             var compliant = false;
 
             // explain
-            thisExplanation = "Not include the following characters: " + disallowedChars;
             // note that we are only complaining about disallowed characters if they use one
             // potentialTODO we apparently also check for ASCII
 
@@ -342,6 +341,8 @@ export module RuleFunctions {
             if (disallowedChars.length === 0) {
                 compliant = true;
             }
+
+            thisExplanation = "Not include the following characters: " + disallowedChars;
 
             // report
             if (compliant) {
