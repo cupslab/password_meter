@@ -3,7 +3,7 @@
 // $ for JQuery (infected with Bootstrap)
 // LZString for LZString
 // log for LogLevel
-// optional passwordMeterConfig for configuration
+// passwordMeterConfig for configuration (optional, will use defaults otherwise)
 
 
 
@@ -92,16 +92,6 @@ export module PasswordMeter {
         getNN(): NeuralNetwork.NeuralNetwork.NeuralNetworkInterface {
             return this.data["nn"];
         }
-
-        /* bootstrap apparently infects jquery
-            setBootstrap(bootstrap:Bootstrap):void {
-                this.data["bootstrap"] = bootstrap;
-            }
-        
-            getBootstrap():Bootstrap {
-                return this.data["bootstrap"];
-            }
-            */
     }
 
     export var instance = new Registry();

@@ -1,5 +1,3 @@
-// pass in jquery reference, LZString reference and boolean flag for verbose output
-import JQuery = require("jquery");
 import LZString = require("lz-string");
 import PasswordMeter = require("./PasswordMeter");
 import LogLevel = require("loglevel");
@@ -106,7 +104,7 @@ export module Helper {
 			if (staticPrefix !== "") {
 				path = staticPrefix + path;
 			}
-			
+
 			this.$.get(path, function (s) {
 				var decompressed = fLZString.decompressFromEncodedURIComponent(s);
 				var words: Array<string> = decompressed.split(",");

@@ -21,23 +21,22 @@ export module BlacklistModule {
         constructor(config: Config.Config.Config) {
             var helper: Helper.Helper.Helper = PasswordMeter.PasswordMeter.instance.getHelper();
 
-            if (!config.blacklist.checkSubstrings) {
-                this.blacklistRejects = function (stringToCheck) {
-                    return this.blacklistDict[stringToCheck];
-                }
-            } else {
-                this.blacklistRejects = function (stringToCheck) {
-                    return this.blacklistBloom.substringExists(stringToCheck, config.blacklist.checkSubstringLength);
-                }
-            }
-
             // only load blacklist if the meter will use it
             if (config.blacklist.active) {
                 if (config.blacklist.checkSubstrings) {
                     this.blacklistBloom = helper.compressedFileToBloomFilter(config.blacklist.blacklistFile,
                         config.blacklist.checkSubstringLength);
+
+                    this.blacklistRejects = function (stringToCheck: string) {
+                        return this.blacklistBloom.substringExists(stringToCheck,
+                            config.blacklist.checkSubstringLength);
+                    }
                 } else {
                     this.blacklistDict = helper.compressedFileToDict(config.blacklist.blacklistFile);
+
+                    this.blacklistRejects = function (stringToCheck: string) {
+                        return this.blacklistDict[stringToCheck];
+                    }
                 }
             }
 
