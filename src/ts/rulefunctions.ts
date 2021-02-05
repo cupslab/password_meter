@@ -1,8 +1,8 @@
 import PasswordMeter = require("./PasswordMeter");
 import Config = require("./config");
 import Helper = require("./helper");
-import NeuralNetwork = require("./nn-misc");
 import Constants = require("./constants");
+import Blacklist = require("./blacklist");
 
 /* ************** */
 /* Rule Functions */
@@ -21,7 +21,7 @@ export module RuleFunctions {
     export function verifyMinimumRequirements(pw: string, username: string): VerifyResult {
         var registry = PasswordMeter.PasswordMeter.instance;
         var config: Config.Config.Config = registry.getConfig();
-        var dictionaries = registry.getDictionaries();
+        var blacklists = registry.getBlacklists();
 
         var compliantColor = config.colors.compliant;
         var noncompliantColor = config.colors.noncompliant;
@@ -299,7 +299,7 @@ export module RuleFunctions {
                     stringToCheck = stringToCheck.toLowerCase();
                 }
             }
-            isBlacklisted = dictionaries.blacklistRejects(stringToCheck);
+            isBlacklisted = blacklists.blacklistRejects(stringToCheck);
             compliant = !isBlacklisted ||
                 pw.length === 0 ||
                 (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
@@ -488,7 +488,7 @@ export module RuleFunctions {
                 var compliant = false;
                 var thisExplanation = "";
 
-                if (pw.length < config.prohibitKnownLeaked.smallestLength || !dictionaries.previouslyLeaked(pw)) {
+                if (pw.length < config.prohibitKnownLeaked.smallestLength || !blacklists.previouslyLeaked(pw)) {
                     compliant = true;
                 } else {
                     compliant = false;

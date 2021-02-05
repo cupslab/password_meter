@@ -7,13 +7,13 @@
 
 
 
-import JQuery = require("jquery");
 import LZString = require("lz-string");
 import LogLevel = require("loglevel");
 //bootstrap has infected jquery already
 import Helper = require("./helper");
 import Config = require("./config");
 import Dictionaries = require("./dict-misc");
+import Blacklist = require("./blacklist");
 import UIMisc = require("./ui-misc");
 import NeuralNetwork = require("./nn-misc");
 
@@ -67,6 +67,14 @@ export module PasswordMeter {
 
         getDictionaries(): Dictionaries.Dictionaries.Dictionaries {
             return this.data["dictionaries"];
+        }
+
+        setBlacklists(blacklists: Blacklist.BlacklistModule.Blacklists) {
+            this.data["blacklists"] = blacklists;
+        }
+
+        getBlacklists(): Blacklist.BlacklistModule.Blacklists {
+            return this.data["blacklists"];
         }
 
         setUI(ui: UIMisc.UIMisc.UIMisc) {

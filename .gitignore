@@ -1,2 +1,5 @@
 src/node_modules
 src/package-lock.json
+
+# emacs temp files
+*~
