@@ -857,7 +857,13 @@ export module UIMisc {
 					overallScore = lengthBasedScore;
 
 				} else {
-					overallScore = nnScore;
+					// as long as the NN is working on the client, use it;
+					// use the heuristic score as a fallback otherwise
+					if (nni.heardFromNn()) {
+						overallScore = nnScore;
+					} else {
+						overallScore = heuristicScore;
+					}
 				}
 			}
 
