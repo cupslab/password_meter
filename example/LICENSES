@@ -1,6 +1,8 @@
 lz-string was licensed under the WTFPL
 bootstrap was licensed under the MIT license
 jquery was licensed under the Apache license
+hibp was licensed under the MIT license
+There are no licensing or attribution requirements on the Pwned Passwords API.
 
 Phrase and word corpora were derived from the following sources:
 -Wikipedia database download (dual licensed under GFDL and CC-BY-SA)
@@ -10,5 +12,3 @@ Phrase and word corpora were derived from the following sources:
 -The Unix dictionary
 -Mark Burnett's xato.net corpus of common passwords
  https://xato.net/today-i-am-releasing-ten-million-passwords-b6278bbe7495#.s11zbdb8q
-
-

@@ -44,93 +44,14 @@ if (!Function.prototype.bind) {
   };
 }
 </script>
-<script src="nn-client.min.js"></script> <!-- Neural networks; this file loads others -->
 
-<script>
-// this defines a policy for 8 character minimum passwords
-var passwordMeterConfig = {
-    provideConcretePasswordSuggestions: true,
-    randomizeOrderCharClassRequirement: true,
-    colors: { // display colors
-        compliant: "#006600", // by default show completed requirement in green
-        noncompliant: "#660000", // by default show outstanding requirement in red
-    },
-    symbols: { // display symbols
-        compliant: "&#x2714; ", // HEAVY CHECK MARK
-        noncompliant: "&#x2751; ", // LOWER RIGHT SHADOWED WHITE SQUARE
-    },
-    remindAgainstReuse: true, // true to emphasize *not* reusing passwords
-    ignoredWords: // list of words that should count for nothing in the password
-        ["pittsburgh",
-        "steelers", "stillers", "penguins", "pens", "pirates", "bucs", "carnegie", "mellon",
-        "university"],
-    length: {
-        active: true,
-        minLength: 8,
-        maxLength: 0, // set to 0 if there is no maximum length
-    },
-    classCount: { // number of character classes
-        active: false,
-        minCount: 1, // classes are upper case, lower case, digits and symbols (others)
-        maxCount: 4,
-    },
-    classRequire: { // required character classes
-        active: false,
-        upperCase: false,
-        lowerCase: false,
-        digits: false,
-        symbols: false,
-    },
-    classAllow: { // permitted character classes
-        active: false,
-        upperCase: true,
-        lowerCase: true,
-        digits: true,
-        symbols: true,
-    },
-    forbidChars: {
-        active: false,
-        list: [],
-    },
-    repeatChars: {
-        active: false,
-        limit: 3, // prohibit a character being repeated N or more times consecutively
-    },
-    usernameDifference: {
-        active: true,
-        limit: 1, // prohibit passwords being N or fewer characters different than username
-    },
-    minLogNnGuessNum: {
-        active: false,
-        threshold: 7, // prohibit passwords with NN guess num less than 10^threshold
-    	rejectionFeedback: "Not be similar to extremely common passwords",
-    },
-    sameChars: {
-    	active: false,
-    	limit: 3,
-    	lengthException: 20,
-    },
-    prohibitKnownLeaked: {
-    	active: false,
-    	smallestLength: 5,
-    },
-    blacklist: {
-        active: false,
-        blacklistFile: "blacklist-chi17lowercase-compressed.txt", // all letters are lowercase
-        caseSensitive: false,
-        stripDigitsSymbolsFromPassword: false,
-        checkSubstrings: false,
-        checkSubstringLength: 5,
-        lengthException: -1, // set to -1 if there is no length exception	
-    },
-    neuralNetworkConfig: {
-        intermediate: "basic_3M.info_and_guess_numbers.no_bloomfilter.json",
-        file: "basic_3M.weight_arch.quantized.fixed_point1000.zigzag.nospace.json",
-        zigzag: true,
-        scaleFactor: 300,
-    },
-};
-</script>
+<!-- Password Meter Configuration -->
+<script type="text/javascript" src="config_policy_meter.js"></script>
+
+<!-- Neural networks -->
+<!-- XXXstroucki do the nn scripts directly originate from the nn package? -->
+<script type="text/javascript" src="nn-client.js"></script> <!-- Neural networks; this file loads others -->
+
 <!-- Load external files needed for the meter to run -->
 <script src="PasswordMeter.js"></script>
 
@@ -145,7 +66,7 @@ var ui = PasswordMeter.getUI();
 <div class="mainBox">
     <!-- The main password-creation section -->
     <div class="grad-maroon createPWHeader">
-        <p class="headerText" style="margin-bottom: 0;">Create Your Password</p>
+        <p class="headerText" style="margin-bottom: 0;">This is a demo meter. Please don't type in your real password.</p>
     </div>
     <div class="passwordCreationSection">
         <div class="pwfield" style="display:inline-block; text-align: center; margin-left: auto; margin-right: auto;">
