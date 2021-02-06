@@ -4,14 +4,14 @@ This project implements a data-driven password meter. Its effects on password se
 
 The project is written in TypeScript, which transcompiles to JavaScript.
 
-The original implementation of this password meter has been extended to include additional support for minimum-strength and blocklist requirements. Password-policy configurations based on these new requirement types were evaluated in the following publication: J. Tan, L. Bauer, N. Christin, and L. F. Cranor. "Practical recommendations for stronger, more usable passwords combining minimum-strength, minimum-length, and blocklist requirements." In the Proceedings of CCS, 2020. https://dl.acm.org/doi/10.1145/3372297.3417882
+The original implementation of this password meter ([v1.0](https://github.com/cupslab/password_meter/releases/tag/v1.0)) has been extended to include additional support for minimum-strength and blocklist requirements ([v2.0](https://github.com/cupslab/password_meter/releases/tag/v2.0)). Password-policy configurations based on these new requirement types were evaluated in the following publication: J. Tan, L. Bauer, N. Christin, and L. F. Cranor. "Practical recommendations for stronger, more usable passwords combining minimum-strength, minimum-length, and blocklist requirements." In the Proceedings of CCS, 2020. https://dl.acm.org/doi/10.1145/3372297.3417882
 
 This project uses the [Pwned Passwords API](https://haveibeenpwned.com/API/v3#PwnedPasswords) to check for previously leaked passwords.
 
 A JavaScript library ([hibp-js](https://github.com/mehdibo/hibp-js) has been
 used in this project, with minor modifications. 
 
-An online demo of the meter is available at https://cups.cs.cmu.edu/meter/
+An online demo of the meter is available at https://cups.cs.cmu.edu/meter2/
 
 
 ## Contact
@@ -23,7 +23,7 @@ password-guessability@cs.cmu.edu
 
 Many potential users of the meter will not need to re-transcompile from TypeScript to JavaScript. Instead, such users can use the code in the /example directory, which contains a ready-to-run environment for the password meter. The primary HTML file is index.html. The password-policy requirements and other meter configuration can be set by editing parameters defined in config_policy_meter.js
 
-We expect that most people who take advantage of the example files will nonetheless edit three sets of common configurations that are made in "passwordMeterConfig" within the /example/index.html file: 
+We expect that most people who take advantage of the example files will edit two sets of common configurations that are made available in config_policy_meter.js:
 
 1) "domainSpecificWords" should be updated to contain a list of site-specific words that should count for nothing in the password. We currently provide a small set of examples specific to CMU.
 
