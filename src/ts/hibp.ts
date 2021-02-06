@@ -70,7 +70,7 @@ export class PasswordLeaks {
         console.log((wasLeaked ? "F" : "Not f") + "ound in HIBP database: " + pwd + " [took " + timeTaken + "ms]");
     }
 
-    hibpCheck(pwd: string) {
+    hibpCheck(pwd: string): void {
         // We hash the pwd first
         var that = this;
         this.sha1(pwd).then(function (hash:string): void {
@@ -102,7 +102,7 @@ export class PasswordLeaks {
         });
     }
 
-    previouslyLeaked(pwd) {
+    previouslyLeaked(pwd: string): boolean {
 
         if (typeof (this.hibpCache[pwd]) === "undefined") {
             this.hibpCache[pwd] = -1; // signal that we're finding out
