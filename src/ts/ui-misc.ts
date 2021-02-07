@@ -4,11 +4,13 @@ import Config = require("./config");
 import RuleFunctions = require("./rulefunctions");
 import Constants = require("./constants");
 import NeuralNetwork = require("./nn-misc");
+import LogLevel = require("loglevel");
 
 export module UIMisc {
 	export class UIMisc {
 		helper: Helper.Helper.Helper;
 		$: JQueryStatic;
+		log: LogLevel.Logger;
 
 		// Global variable to retain the password when the modal was opened,
 		// so that we later know whether or not to show a 'discard' button
@@ -65,6 +67,7 @@ export module UIMisc {
 			var registry = PasswordMeter.PasswordMeter.instance;
 			this.helper = registry.getHelper();
 			this.$ = registry.getJquery();
+			this.log = registry.getLog();
 
 			// shuffle character classes and store for use in requirements feedback
 			// note: we do it here rather than shuffle each time dynamically to avoid
@@ -496,6 +499,8 @@ export module UIMisc {
 			var overallScore: number = 0;
 			var numberOfScores: number = 0;
 			var changedAnyMappings: boolean = false;
+			var log = this.log;
+
 			if (typeof (this.heuristicMapping[fixedpw]) !== "undefined"
 				&& this.heuristicMapping[fixedpw] >= 0) {
 				numberOfScores++;
@@ -829,6 +834,7 @@ export module UIMisc {
 			var overallScore = 0;
 			var numberOfScores = 0;
 			var heuristicScore = this.heuristicMapping[pw];
+			var log = this.log;
 
 			var nnNum = nni.getNeuralNetNum(pw);
 			var unscaledNnNum = nnNum +

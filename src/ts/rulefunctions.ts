@@ -464,6 +464,7 @@ export module RuleFunctions {
             var minLogNnGuessNum = config.minLogNnGuessNum.threshold;
             var nni = PasswordMeter.PasswordMeter.instance.getNN();
             var conservativeNnNum = nni.getNeuralNetNum(pw);
+            var log = PasswordMeter.PasswordMeter.instance.getLog();
 
             // check
             if (conservativeNnNum < 0) {

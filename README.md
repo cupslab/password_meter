@@ -48,9 +48,9 @@ Finally, the neural network that estimates password strength needs to be trained
 
 ## Dependencies
 
-Our meter depends on two common external web-development libraries:
+Our meter depends on several external web-development libraries:
 
-  * JQuery (minified version 3.2.1 JS file used for testing) https://jquery.com/
+  * JQuery (minified version 3.5.1 JS file used for testing) https://jquery.com/
   * Bootstrap (minified version 3.3.7 of both the CSS and JS file used for testing) http://getbootstrap.com/
   * loglevel (minified version of 1.6.0 JS file used for testing) https://github.com/pimterry/loglevel
   * lz-string.js http://pieroxy.net/blog/pages/lz-string/testing.html

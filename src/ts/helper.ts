@@ -128,6 +128,7 @@ export module Helper {
 			var startTime = Date.now();
 			var substringsAdded = 0;
 			var fLZString = this.LZString;
+			var log = this.log;
 
 			this.$.get(path, function(s) {
 
