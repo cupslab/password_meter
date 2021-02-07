@@ -290,7 +290,7 @@ export module UIMisc {
 			// If meets policy, matches confirm, and they hit submit, let them
 			if (triedToSubmit && compliantOverall) {
 				//alert("this would be submitted");
-				// XXXstroucki what is this?
+				// XXXstroucki what is this? Its absence throws an error.
 				// @ts-ignore
 				continueSubmit();
 			}
@@ -337,7 +337,6 @@ export module UIMisc {
 			var pw = "";
 			var nni = PasswordMeter.PasswordMeter.instance.getNN();
 			var log = PasswordMeter.PasswordMeter.instance.getLog();
-			var nn = nni.nn;
 			if (this.$("#myModal").data("bs.modal") && this.$("#myModal").data("bs.modal").isShown) {
 				pw = this.$("#pwboxModal").val() as string;
 			} else {
@@ -345,9 +344,13 @@ export module UIMisc {
 			}
 
 			// Is there a point to calculate for an empty password?
+			// New version of meter depends on calculations taking place
+			// to initialize the UI properly
+			/*
 			if (0 === pw.length) {
 				return;
 			}
+			*/
 
 			var username = this.$("#usernamebox").val() as string;
 			var ratingsComplete = 0;
@@ -792,7 +795,7 @@ export module UIMisc {
 				reasonWhy.push(structureObj.reasonWhy);
 			}
 
-			// Save the mapping of password to score
+			// Save the mapping of password to heuristic score
 			this.heuristicMapping[originalPW] = overallHeuristicScore;
 			// Save the mapping of password to feedback
 			this.feedbackMapping[originalPW] = JSON.stringify({
@@ -844,6 +847,10 @@ export module UIMisc {
 			if (pw.length > 0) {
 				if (typeof (heuristicScore) !== "undefined"
 					&& heuristicScore >= 0) {
+					numberOfScores++;
+				}
+				if (typeof (nnNum) !== "undefined"
+					&& nnScore >= 0 && isFinite(nnScore)) {
 					numberOfScores++;
 				}
 
