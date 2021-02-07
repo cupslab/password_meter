@@ -32,6 +32,8 @@
 // based on https://github.com/mehdibo/hibp-js (with additional tweaks for
 // meter and conversion to Typescript by Josh Tan and Michael Stroucken)
 
+import PasswordMeter = require("./PasswordMeter");
+
 export class PasswordLeaks {
 
     private hibpCache: { [key: string]: number };
@@ -67,7 +69,8 @@ export class PasswordLeaks {
         this.hibpCache[pwd] = wasLeaked ? 1 : 0;
         var timeTaken = Date.now() - this.hibpTimings[pwd];
         this.hibpTimings[pwd] = timeTaken;
-        console.log((wasLeaked ? "F" : "Not f") + "ound in HIBP database: " + pwd + " [took " + timeTaken + "ms]");
+        var log = PasswordMeter.PasswordMeter.instance.getLog();
+        log.debug((wasLeaked ? "F" : "Not f") + "ound in HIBP database: " + pwd + " [took " + timeTaken + "ms]");
     }
 
     hibpCheck(pwd: string): void {
