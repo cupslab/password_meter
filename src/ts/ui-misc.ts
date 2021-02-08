@@ -647,7 +647,7 @@ export module UIMisc {
 			var digitObj = RuleFunctions.RuleFunctions.countDIGS(pw);
 			var symbolObj = RuleFunctions.RuleFunctions.countSYMS(pw);
 			var dateObj = RuleFunctions.RuleFunctions.identifyDates(pw);
-			var minimumObj = RuleFunctions.RuleFunctions.verifyMinimumRequirements(pw, username);
+			//var minimumObj = RuleFunctions.RuleFunctions.verifyMinimumRequirements(pw, username);
 			var alphabeticsequenceObj = RuleFunctions.RuleFunctions.alphabeticSequenceCheck(pw);
 			var commonsubstringObj = RuleFunctions.RuleFunctions.commonSubstringCheck(pw);
 			var dictionaryCheckObj = RuleFunctions.RuleFunctions.combinedDictCheck(pw);
