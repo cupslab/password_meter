@@ -22,8 +22,7 @@
   },
   "browserify": {
     "transform": [
-      "babelify",
-      "uglifyify"
+      "babelify"
     ]
   }
 }
