@@ -304,30 +304,25 @@ export module RuleFunctions {
                 (config.blacklist.lengthException != -1 && pw.length >= config.blacklist.lengthException)
 
             // report
-            // note that we are only complaining about disallowed passwords if they use one
-            if (compliant) {
-            } else {
-                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
-
-            }
-
+            // (only explain if violate requirement)
             if (!compliant) {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
                 explanation["blacklist"] = thisExplanation;
             }
+
             compliance["blacklist"] = compliant;
         }
 
         // requirement: forbidden/permitted characters
         if (config.forbidChars.active) {
             var forbiddenChars = config.forbidChars.list;
+
+            // explain
             var thisExplanation = "";
             var compliant = false;
 
-            // explain
-            // note that we are only complaining about disallowed characters if they use one
-            // potentialTODO we apparently also check for ASCII
-
             // check
+            // potentialTODO we apparently also check for ASCII
             var pwUnique = pw.removeDuplicateChars();
             var disallowedChars = "";
 
@@ -345,14 +340,12 @@ export module RuleFunctions {
             thisExplanation = "Not include the following characters: " + disallowedChars;
 
             // report
-            if (compliant) {
-            } else {
-                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
-            }
-
+            // (only explain if violate requirement)
             if (!compliant) {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
                 explanation["forbidChars"] = thisExplanation;
             }
+
             compliance["forbidChars"] = compliant;
         }
 
@@ -380,7 +373,6 @@ export module RuleFunctions {
             // report
             if (compliant) {
                 thisExplanation = "<span style='color:" + compliantColor + "'>" + compliantSymbol + thisExplanation;
-
             } else {
                 thisExplanation += " (<b>" + charsRepeatedConsecutively.removeDuplicates().join("</b>, <b> ") + "</b>)";
                 thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation;
@@ -414,47 +406,35 @@ export module RuleFunctions {
             }
 
             // report
-            if (compliant) {
-            } else {
-                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
-            }
-
+            // (only explain if violate requirement)
             if (!compliant) {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
                 explanation["usernameDifference"] = thisExplanation;
             }
+
             compliance["usernameDifference"] = compliant;
         }
 
-        // requirement: prohibit previously-known leaked passwords
+        // requirement: prohibit known previously-leaked passwords
         if (config.prohibitKnownLeaked.active) {
             // explain
             var thisExplanation = "Not use a password found in previous security leaks";
 
             // check
             var compliant = false;
-            // prohibit perviously-known leaked passwords
-            if (config.prohibitKnownLeaked.active) {
-
-                var compliant = false;
-                var thisExplanation = "";
-
-                if (pw.length < config.prohibitKnownLeaked.smallestLength || !blacklists.previouslyLeaked(pw)) {
-                    compliant = true;
-                } else {
-                    compliant = false;
-                }
-
-                // report
-                if (compliant) {
-                } else {
-                    thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
-                }
-
-                if (!compliant) {
-                    explanation["usernameDifference"] = thisExplanation;
-                }
-                compliance["prohibitKnownLeaked"] = compliant;
+            if (pw.length < config.prohibitKnownLeaked.smallestLength || !blacklists.previouslyLeaked(pw)) {
+                compliant = true;
+            } else {
+                compliant = false;
             }
+
+            // report
+            // note that we are only reporting if they do not comply
+            if (!compliant) {
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation + "</span>";
+                explanation["prohibitKnownLeaked"] = thisExplanation;
+            }
+            compliance["prohibitKnownLeaked"] = compliant;
         }
 
         // requirement: min NN guess number requirement (by log10)
@@ -476,10 +456,13 @@ export module RuleFunctions {
             } else {
                 log.debug("too low NN guess number: " + pw + " (" + conservativeNnNum +
                     " < " + minLogNnGuessNum + ")");
-                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + config.minLogNnGuessNum.rejectionFeedback;
             }
 
+            // report
+            // note that we are only reporting if they do not comply
             if (!compliant) {
+                thisExplanation = config.minLogNnGuessNum.rejectionFeedback;
+                thisExplanation = "<span style='color:" + noncompliantColor + "'>" + noncompliantSymbol + thisExplanation;
                 explanation["minLogNnGuessNum"] = thisExplanation;
             }
             compliance["minLogNnGuessNum"] = compliant;
@@ -1630,9 +1613,6 @@ export module RuleFunctions {
 
         // lowercase and split the password:
         pw = pw.toLowerCase();
-
-        // remove characters that could delimit words
-        pw = pw.replace(/[-_ ]/g, "");
 
         // remove characters that could delimit words
         pw = pw.replace(/[-_ ]/g, "");
