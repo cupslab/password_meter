@@ -65,6 +65,7 @@ To set up the meter, define the following global variables for the above depende
   * log for loglevel
   * passwordMeterConfig for configuration (optional, will default to 1class8 policy)
 
+Once a compliant password has been devised, the meter code will call out to a function "continueSubmit" with the password as an argument. The code in example/index.html will currently display a Javascript alert, but can be extended as the interface to further processing.
 
 ## Details of /example files
 
@@ -94,7 +95,7 @@ We label each file with its intended purpose within the meter: main file; neural
 
   * **index.html** The main file for our demo meter. This file contains the HTML layout for our demo meter and the options for configuring the password-composition policy. It references, directly or indirectly, all of the other files.
 
-  * **jquery-3.2.1.min.js** (Required external library) The jquery library (version 3.2.1), minified. https://jquery.com/
+  * **jquery-3.5.1.min.js** (Required external library) The jquery library (version 3.5.1), minified. https://jquery.com/
 
   * **lz-string.js** (Required external library) A Javascript implementation of Lempel-Ziv-Welch (LZW) lossless compression. http://pieroxy.net/blog/pages/lz-string/testing.html
 

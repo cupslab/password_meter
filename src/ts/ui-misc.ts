@@ -278,7 +278,9 @@ export module UIMisc {
 				this.$("#passwordNonCompliant").hide();
 			}
 			// Check that the confirm box matches the password
-			if (this.$("#pwbox").val() !== this.$("#confirmbox").val()) {
+			var pw = this.$("#pwbox").val() as string;
+			var confirm = this.$("#confirmbox").val() as string;
+			if (pw !== confirm) {
 				compliantOverall = false;
 				// Only show the error when they try to submit a compliant pw
 				if (triedToSubmit && this.inCompliance) {
@@ -289,10 +291,9 @@ export module UIMisc {
 			}
 			// If meets policy, matches confirm, and they hit submit, let them
 			if (triedToSubmit && compliantOverall) {
-				//alert("this would be submitted");
-				// XXXstroucki what is this? Its absence throws an error.
+				// Function is provided outside the meter
 				// @ts-ignore
-				continueSubmit();
+				continueSubmit(pw);
 			}
 		}
 
