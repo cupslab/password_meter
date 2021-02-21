@@ -1095,13 +1095,8 @@ export module RuleFunctions {
         if there are non-consecutive keyboard patterns (e.g., qwert621asdfg),
         return the sum of all characters involved in a keyboard pattern */
         pwUnfiltered = pwUnfiltered.toLowerCase(); // for ease of checking, lowercase password
-        var numCharsPattern = 0;
-        //var ourmap = [["`","1","2","3","4","5","6","7","8","9","0","-" ,"=",""  ],
-        //		    ["", "q","w","e","r","t","y","u","i","o","p","[" ,"]","\\"],
-        //		    ["", "a","s","d","f","g","h","j","k","l",";","\'","" ,""  ],
-        //		    ["", "z","x","c","v","b","n","m",",",".","/",""  ,"" ,""  ]];
 
-        // potentialTODO pairs are row, column
+        // pairs are row, column
         var keyboard: { [key: string]: Array<number> } = {
             "a": [2, 1],
             "b": [3, 5],
@@ -1188,63 +1183,42 @@ export module RuleFunctions {
             var deltay = keyboard[pw.charAt(i)][1] - keyboard[pw.charAt(i - 1)][1];
             keyvectors[i - 1] = deltax.toString() + "," + deltay.toString();
         }
-        var ALLDIGITS = new RegExp("^[0-9]+$");
         // find *longest* series of identical vectors... this is the longest pattern
-        var longestmatchstart = 0;
-        var longestmatchlength = 0;
-        var seriesvector = "none";
-        var currentstart = 0;
+        var currentLength = 0;
+        var currentStart = 0;
+        var maxLength = 0;
+        var maxString = "";
+        var currentVector = "none";
         for (var i = 0; i < keyvectors.length; i++) {
-            // potentialTODO we have the inter-key vectors in keyvectors now
             var vector = keyvectors[i];
-            if (vector === seriesvector) {
+            if (currentVector === vector) {
                 // continuing the series
+                currentLength++;
             } else {
-                // a new vector, save the data of the old series if necessary
-                if (i - currentstart > longestmatchlength) {
-                    // longer than what we've seen so far, so save info
-
-                    // original wanted to ignore key repeats?
-                    if (vector !== "0,0") {
-                        longestmatchstart = currentstart;
-                        longestmatchlength = i - currentstart;
-                    }
+                // a new vector
+                if (currentLength > maxLength) {
+                    maxString = pw.substring(currentStart, currentStart + currentLength + 1);
+                    maxLength = currentLength;
                 }
-                // now start a new series
-                currentstart = i;
+                // the original intent seems to have been
+                // to ignore repeated characters
+                if (vector === "0,0") {
+                    currentVector = "none"; // make repetition not count for series
+                } else {
+                    currentVector = vector;
+                }
+                currentStart = i;
+                currentLength = 1;
             }
-            /* potentialTODO ???
-            if (keyvectors[i] !== seriesvector) { // end of match
-                if ((i - currentstart) > longestmatchlength &&
-                !pw.substring(currentstart, currentstart + i - currentstart + 1).match(ALLDIGITS) &&
-                seriesvector !== "0,0") {
-                    // longer than previous long match, and also not all digits,
-                    // and also not just repetition of the same character (0,0 vector)
-                    longestmatchlength = i - currentstart;
-                    longestmatchstart = currentstart;
-                }
-                currentstart = i;
-                seriesvector = keyvectors[i];
-            } else if (i === (keyvectors.length - 1)) {
-                // not end of match, but end of pw... we need to include final character
-                if ((i - currentstart + 1) > longestmatchlength &&
-                !pw.substring(currentstart, currentstart + i - currentstart + 1).match(ALLDIGITS) &&
-                seriesvector !== "0,0") {
-                    // longer than previous long match, and also not all digits,
-                    // and also not just repetition of the same character (0,0 vector)
-                    longestmatchlength = i - currentstart + 1;
-                    longestmatchstart = currentstart;
-                }
-            }
-            */
         }
-        var score = longestmatchlength + 1; // these are the inter-key jumps, so add 1 to get length of string
+
+        var score = maxLength + 1; // these are the inter-key jumps, so add 1 to get length of string
         var publicText = "";
         var sensitiveText = "";
         var problemText = "";
         var reasonWhy = "";
         if (score >= 4) { // if keyboard pattern of at least 4 characters
-            problemText = pw.substring(longestmatchstart, longestmatchstart + longestmatchlength + 1).escapeHTML();
+            problemText = maxString.escapeHTML();
             publicText = "Avoid using a pattern on your keyboard";
             sensitiveText = "Avoid using a pattern on your keyboard like <b>" + problemText + "</b>";
             reasonWhy = "Because keyboard patterns are very common in passwords, attackers know to guess them";
