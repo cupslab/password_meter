@@ -265,7 +265,7 @@ export module UIMisc {
 		generateCandidateFixed(pw: string, depth: number, originalPW: string): number {
 			// We keep a vector that tracks changes we make to the password for 
 			// future highlighting purposes.
-			var deltas = [];
+			var deltas: Array<number> = [];
 			// If this is the initial call, initialize that vector
 			if (typeof (this.deltaHighlighted[pw]) === "undefined") {
 				for (var i = 0; i < pw.length; i++) {
