@@ -31,7 +31,7 @@ We expect that most people who take advantage of the example files will edit two
 
 Beyond these configuration decisions, we expect that people who deploy our meter will edit the layout in /example/index.html and /example/config.css 
 
-Note that running the meter's code locally (e.g., from your computer's local hard disk) with browsers' default settings will not load the dictionary files (dictionary-*), and as a result no feedback will be given based on the use of dictionary words or common passwords. In contrast, if loaded from a web server (e.g., Apache), these files will be loaded correctly.
+Note that running the meter's code locally on your computer using "file" URLs with browser's default settings will not load the dictionary files (dictionary-*), and as a result no feedback will be given based on the use of dictionary words or common passwords. In contrast, if loaded from a web server (e.g., Apache), these files will be loaded correctly.
 
 Note also that the meter expects all files to be in the same directory as each other.
 
@@ -43,7 +43,11 @@ Note also that the meter expects all files to be in the same directory as each o
   * Then run npm run do-browserify to generate the PasswordMeter.js file
   * Place the PasswordMeter.js file with the other web files (i.e., in the /example directory)
 
-Finally, the neural network that estimates password strength needs to be trained for a site's particular password-composition policy. The parameter files must be provided in the configuration. The example neural network files we provide (/example/tfjs_1c8/*) are trained for a 1class8 policy and may not provide accurate strength estimates for passwords created under different policies. For more detail on training the neural network, please see https://github.com/cupslab/neural_network_cracking
+Finally, the neural network that estimates password strength needs to be trained for a site's particular password-composition policy. The parameter files must be provided in the configuration. The example neural network files we provide (/example/tfjs_1c8/*) are trained for a 1class8 policy and may not provide accurate strength estimates for passwords created under different policies.
+
+For more detail on training the neural network, please see https://github.com/cupslab/neural_network_cracking
+
+For more detail on importing a custom TensorFlow model, refer to https://www.tensorflow.org/js/tutorials/conversion/import_saved_model
 
 
 ## Dependencies
@@ -99,11 +103,11 @@ We label each file with its intended purpose within the meter: main file; neural
 
   * **lz-string.js** (Required external library) A Javascript implementation of Lempel-Ziv-Welch (LZW) lossless compression. http://pieroxy.net/blog/pages/lz-string/testing.html
 
-  * **nn-client.min.js** (Neural network computation) The main file for instantiating our artificial neural networks for calculating password guessability. This file loads worker.min.js as needed.
+  * **nn-client.js** (Neural network computation) The main file for instantiating our artificial neural networks for calculating password guessability. This file loads worker.min.js as needed.
 
   * **PasswordMeter.js** (Main file) A Javascript file containing the functions used to score the password based on 21 different heuristics. It includes helper functions (mostly string and array prototypes), functions to verify that a password meets the minimum requirements of a given password-composition policy, and the functions that implement our heuristic scoring. This file is transcompiled from the set of TypeScript files in the /src/ts/ directory.
 
-  * **nn-client.min.js** (Neural network computation) To calculate neural network guess numbers asynchronously (and thereby prevent interface lag), this file uses the WebWorker framework to spawn separate threads for calculating guess numbers for a password using neural networks.
+  * **worker.min.js** (Neural network computation) To calculate neural network guess numbers asynchronously (and thereby prevent interface lag), this file uses the WebWorker framework to spawn separate threads for calculating guess numbers for a password using neural networks.
 
 
 ## Characteristics 
@@ -153,7 +157,7 @@ The list of functions that provide feedback, in descending order of priority, in
   * **characterClasses()** returns the number of different character classes (1-4) in the password
 
 
-## Initial Project Contributors
+## Project Contributors
 
 Felicia Alfieri, Maung Aung, Lujo Bauer, Nicolas Christin, Jessica Colnago, Lorrie Faith Cranor, Henry Dixon, Pardis Emami Naeini, Hana Habib, Noah Johnson, William Melicher, Michael Stroucken, Josh Tan and Blase Ur* at Carnegie Mellon University and (*)the University of Chicago, United States.
 
